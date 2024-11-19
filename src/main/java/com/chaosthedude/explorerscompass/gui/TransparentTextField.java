@@ -1,6 +1,5 @@
 package com.chaosthedude.explorerscompass.gui;
 
-import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -23,8 +22,8 @@ public class TransparentTextField extends EditBox {
 	private int pseudoLineScrollOffset;
 	private int pseudoEnabledColor = 14737632;
 	private int pseudoDisabledColor = 7368816;
+	private int pseudoCursorCounter;
 	private int pseudoSelectionEnd;
-	private long pseudoFocusedTime;
 
 	public TransparentTextField(Font font, int x, int y, int width, int height, Component label) {
 		super(font, x, y, width, height, label);
@@ -33,10 +32,11 @@ public class TransparentTextField extends EditBox {
 	}
 
 	@Override
-	public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
 		if (isVisible()) {
 			if (pseudoEnableBackgroundDrawing) {
-				guiGraphics.fill(getX(), getY(), getX() + width, getY() + height, 255 / 2 << 24);
+				final int color = (int) (255.0F * 0.55f);
+				guiGraphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), color / 2 << 24);
 			}
 			boolean showLabel = !isFocused() && getValue().isEmpty();
             int i = showLabel ? labelColor : (pseudoIsEnabled ? pseudoEnabledColor : pseudoDisabledColor);
@@ -45,7 +45,7 @@ public class TransparentTextField extends EditBox {
 			String text = showLabel ? label.getString() : getValue();
 			String s = font.plainSubstrByWidth(text.substring(pseudoLineScrollOffset), getWidth());
 			boolean flag = j >= 0 && j <= s.length();
-			boolean flag1 = isFocused() && (Util.getMillis() - pseudoFocusedTime) / 300L % 2L == 0L && flag;
+			boolean flag1 = isFocused() && pseudoCursorCounter / 6 % 2 == 0 && flag;
 			int l = pseudoEnableBackgroundDrawing ? getX() + 4 : getX();
 			int i1 = pseudoEnableBackgroundDrawing ? getY() + (getHeight() - 8) / 2 : getY();
 			int j1 = l;
@@ -109,7 +109,7 @@ public class TransparentTextField extends EditBox {
 	@Override
 	public void setFocused(boolean isFocused) {
 		if (isFocused && !isFocused()) {
-			pseudoFocusedTime = Util.getMillis();
+			pseudoCursorCounter = 0;
 		}
 		super.setFocused(isFocused);
 	}
@@ -124,6 +124,12 @@ public class TransparentTextField extends EditBox {
 	public void setMaxLength(int length) {
 		super.setMaxLength(length);
 		pseudoMaxStringLength = length;
+	}
+	
+	@Override
+	public void tick() {
+		super.tick();
+		pseudoCursorCounter++;
 	}
 	
 	@Override

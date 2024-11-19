@@ -23,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
 
 @OnlyIn(Dist.CLIENT)
 public class ExplorersCompassScreen extends Screen {
@@ -56,8 +55,8 @@ public class ExplorersCompassScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double par1, double par2, double par3, double par4) {
-		return selectionList.mouseScrolled(par1, par2, par3, par4);
+	public boolean mouseScrolled(double scroll1, double scroll2, double scroll3) {
+		return selectionList.mouseScrolled(scroll1, scroll2, scroll3);
 	}
 
 	@Override
@@ -67,6 +66,7 @@ public class ExplorersCompassScreen extends Screen {
 
 	@Override
 	public void tick() {
+		searchTextField.tick();
 		teleportButton.active = explorersCompass.getState(stack) == CompassState.FOUND;
 		
 		// Check if the allowed structure list has synced
@@ -74,15 +74,16 @@ public class ExplorersCompassScreen extends Screen {
 			removeWidget(selectionList);
 			allowedStructureKeys = new ArrayList<ResourceLocation>(ExplorersCompass.allowedStructureKeys);
 			structureKeysMatchingSearch = new ArrayList<ResourceLocation>(allowedStructureKeys);
-			selectionList = new StructureSearchList(this, minecraft, width + 110, height - 40, 40, 45);
+			selectionList = new StructureSearchList(this, minecraft, width + 110, height, 40, height, 45);
 			addRenderableWidget(selectionList);
 		}
 	}
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-		super.render(guiGraphics, mouseX, mouseY, partialTicks);
+		renderBackground(guiGraphics);
 		guiGraphics.drawCenteredString(font, title, 65, 15, 0xffffff);
+		super.render(guiGraphics, mouseX, mouseY, partialTicks);
 	}
 
 	@Override
@@ -112,17 +113,17 @@ public class ExplorersCompassScreen extends Screen {
 	}
 
 	public void searchForStructure(ResourceLocation key) {
-		ExplorersCompass.network.send(new CompassSearchPacket(key, List.of(key), player.blockPosition()), PacketDistributor.SERVER.noArg());
+		ExplorersCompass.network.sendToServer(new CompassSearchPacket(key, List.of(key), player.blockPosition()));
 		minecraft.setScreen(null);
 	}
 	
 	public void searchForGroup(ResourceLocation key) {
-		ExplorersCompass.network.send(new CompassSearchPacket(key, ExplorersCompass.typeKeysToStructureKeys.get(key), player.blockPosition()), PacketDistributor.SERVER.noArg());
+		ExplorersCompass.network.sendToServer(new CompassSearchPacket(key, ExplorersCompass.typeKeysToStructureKeys.get(key), player.blockPosition()));
 		minecraft.setScreen(null);
 	}
 
 	public void teleport() {
-		ExplorersCompass.network.send(new TeleportPacket(), PacketDistributor.SERVER.noArg());
+		ExplorersCompass.network.sendToServer(new TeleportPacket());
 		minecraft.setScreen(null);
 	}
 
@@ -181,7 +182,7 @@ public class ExplorersCompassScreen extends Screen {
 		addRenderableWidget(searchTextField);
 		
 		if (selectionList == null) {
-			selectionList = new StructureSearchList(this, minecraft, width + 110, height - 40, 40, 45);
+			selectionList = new StructureSearchList(this, minecraft, width + 110, height, 40, height, 45);
 		}
 		addRenderableWidget(selectionList);
 	}

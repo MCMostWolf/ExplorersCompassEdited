@@ -17,7 +17,7 @@ public class PlayerUtils {
 		if (server != null && server.isSingleplayer()) {
 			LevelData levelData = server.getLevel(player.level().dimension()).getLevelData();
 			if (levelData instanceof ServerLevelData) {
-				return ((ServerLevelData) levelData).isAllowCommands();
+				return ((ServerLevelData) levelData).getAllowCommands();
 			}
 		}
 

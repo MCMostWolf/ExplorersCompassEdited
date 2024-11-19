@@ -1,5 +1,7 @@
 package com.chaosthedude.explorerscompass.network;
 
+import java.util.function.Supplier;
+
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
@@ -13,7 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.network.CustomPayloadEvent;
+import net.minecraftforge.network.NetworkEvent;
 
 public class TeleportPacket {
 
@@ -25,17 +27,17 @@ public class TeleportPacket {
 
 	public void toBytes(FriendlyByteBuf buf) {}
 
-	public static void handle(TeleportPacket packet, CustomPayloadEvent.Context ctx) {
-		ctx.enqueueWork(() -> {
-			final ItemStack stack = ItemUtils.getHeldItem(ctx.getSender(), ExplorersCompass.explorersCompass);
+	public void handle(Supplier<NetworkEvent.Context> ctx) {
+		ctx.get().enqueueWork(() -> {
+			final ItemStack stack = ItemUtils.getHeldItem(ctx.get().getSender(), ExplorersCompass.explorersCompass);
 			if (!stack.isEmpty()) {
 				final ExplorersCompassItem explorersCompass = (ExplorersCompassItem) stack.getItem();
-				final ServerPlayer player = ctx.getSender();
+				final ServerPlayer player = ctx.get().getSender();
 				if (ConfigHandler.GENERAL.allowTeleport.get() && PlayerUtils.canTeleport(player.getServer(), player)) {
 					if (explorersCompass.getState(stack) == CompassState.FOUND) {
 						final int x = explorersCompass.getFoundStructureX(stack);
 						final int z = explorersCompass.getFoundStructureZ(stack);
-						final int y = packet.findValidTeleportHeight(player.level(), x, z);
+						final int y = findValidTeleportHeight(player.level(), x, z);
 
 						player.stopRiding();
 						player.connection.teleport(x, y, z, player.getYRot(), player.getXRot());
@@ -50,7 +52,7 @@ public class TeleportPacket {
 				}
 			}
 		});
-		ctx.setPacketHandled(true);
+		ctx.get().setPacketHandled(true);
 	}
 	
 	private int findValidTeleportHeight(Level level, int x, int z) {

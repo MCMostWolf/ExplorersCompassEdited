@@ -21,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -63,7 +64,7 @@ public class StructureUtils {
 				}
 			}
 		}
-		return ResourceLocation.fromNamespaceAndPath(ExplorersCompass.MODID, "none");
+		return new ResourceLocation(ExplorersCompass.MODID, "none");
 	}
 
 	public static ResourceLocation getKeyForStructure(ServerLevel level, Structure structure) {
@@ -71,17 +72,21 @@ public class StructureUtils {
 	}
 
 	public static Structure getStructureForKey(ServerLevel level, ResourceLocation key) {
-		return getStructureRegistry(level).getValue(key);
+		return getStructureRegistry(level).get(key);
 	}
 	
 	public static Holder<Structure> getHolderForStructure(ServerLevel level, Structure structure) {
-		return getStructureRegistry(level).wrapAsHolder(structure);
+		Optional<ResourceKey<Structure>> optional = getStructureRegistry(level).getResourceKey(structure);
+		if (optional.isPresent()) {
+			return getStructureRegistry(level).getHolderOrThrow(optional.get());
+		}
+		return null;
 	}
 
 	public static List<ResourceLocation> getAllowedStructureKeys(ServerLevel level) {
 		final List<ResourceLocation> structures = new ArrayList<ResourceLocation>();
 		for (Structure structure : getStructureRegistry(level)) {
-			if (structure != null && getKeyForStructure(level, structure) != null && !structureIsBlacklisted(level, structure) && !structureIsHidden(level, structure)) {
+			if (structure != null && getKeyForStructure(level, structure) != null && !structureIsBlacklisted(level, structure)) {
 				structures.add(getKeyForStructure(level, structure));
 			}
 		}
@@ -97,11 +102,6 @@ public class StructureUtils {
 		}
 		return false;
 	}
-	
-	public static boolean structureIsHidden(ServerLevel level, Structure structure) {
-		final Registry<Structure> structureRegistry = getStructureRegistry(level);
-		return structureRegistry.wrapAsHolder(structure).getTagKeys().anyMatch(tag -> tag.location().getPath().equals("c:hidden_from_locator_selection"));
-	}
 
 	public static List<ResourceLocation> getGeneratingDimensionKeys(ServerLevel serverLevel, Structure structure) {
 		final List<ResourceLocation> dimensions = new ArrayList<ResourceLocation>();
@@ -114,7 +114,7 @@ public class StructureUtils {
 		}
 		// Fix empty dimensions for stronghold
 		if (structure == StructureType.STRONGHOLD && dimensions.isEmpty()) {
-			dimensions.add(ResourceLocation.parse("minecraft:overworld"));
+			dimensions.add(new ResourceLocation("minecraft:overworld"));
 		}
 		return dimensions;
 	}
@@ -190,11 +190,11 @@ public class StructureUtils {
 	}
 
 	private static Registry<Structure> getStructureRegistry(ServerLevel level) {
-		return level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+		return level.registryAccess().registryOrThrow(Registries.STRUCTURE);
 	}
 
 	private static Registry<StructureSet> getStructureSetRegistry(ServerLevel level) {
-		return level.registryAccess().lookupOrThrow(Registries.STRUCTURE_SET);
+		return level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
 	}
 
 	private static String convertToRegex(String glob) {

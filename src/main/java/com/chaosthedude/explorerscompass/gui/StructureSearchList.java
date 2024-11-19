@@ -15,15 +15,15 @@ public class StructureSearchList extends ObjectSelectionList<StructureSearchEntr
 
 	private final ExplorersCompassScreen parentScreen;
 
-	public StructureSearchList(ExplorersCompassScreen parentScreen, Minecraft mc, int width, int height, int top, int bottom) {
-		super(mc, width, height, top, bottom);
+	public StructureSearchList(ExplorersCompassScreen parentScreen, Minecraft mc, int width, int height, int top, int bottom, int slotHeight) {
+		super(mc, width, height, top, bottom, slotHeight);
 		this.parentScreen = parentScreen;
 		refreshList();
 	}
 
 	@Override
 	protected int getScrollbarPosition() {
-		return getRowLeft() + getRowWidth() - 2;
+		return super.getScrollbarPosition() + 20;
 	}
 
 	@Override
@@ -37,47 +37,42 @@ public class StructureSearchList extends ObjectSelectionList<StructureSearchEntr
 	}
 
 	@Override
-	public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-		guiGraphics.fill(getRowLeft() - 4, getY(), getRowLeft() + getRowWidth() + 4, getY() + getHeight() + 4, 255 / 2 << 24);
-		
-		enableScissor(guiGraphics);
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+		renderList(guiGraphics, mouseX, mouseY, partialTicks);
+	}
+
+	@Override
+	protected void renderList(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
 		for (int j = 0; j < getItemCount(); ++j) {
 			int rowTop = getRowTop(j);
 			int rowBottom = getRowBottom(j);
-			if (rowBottom >= getY() && rowTop <= getBottom()) {
+			if (rowBottom >= y0 && rowTop <= y1) {
 				int j1 = itemHeight - 4;
 				StructureSearchEntry entry = getEntry(j);
 				if (/*renderSelection*/ true && isSelectedItem(j)) {
-					final int insideLeft = getX() + width / 2 - getRowWidth() / 2 + 2;
+					final int insideLeft = x0 + width / 2 - getRowWidth() / 2 + 2;
 					guiGraphics.fill(insideLeft - 4, rowTop - 4, insideLeft + getRowWidth() + 4, rowTop + itemHeight, 255 / 2 << 24);
 				}
 				entry.render(guiGraphics, j, rowTop, getRowLeft(), getRowWidth(), j1, mouseX, mouseY, isMouseOver((double) mouseX, (double) mouseY) && Objects.equals(getEntryAtPosition((double) mouseX, (double) mouseY), entry), partialTicks);
 			}
 		}
-		guiGraphics.disableScissor();
 
 		if (getMaxScroll() > 0) {
 			int left = getScrollbarPosition();
 			int right = left + 6;
-			int height = (int) ((float) ((getBottom() - getY()) * (getBottom() - getY())) / (float) getMaxPosition());
-			height = Mth.clamp(height, 32, getBottom() - getY() - 8);
-			int top = (int) getScrollAmount() * (getBottom() - getY() - height) / getMaxScroll() + getY();
-			if (top < getY()) {
-				top = getY();
+			int height = (int) ((float) ((y1 - y0) * (y1 - y0)) / (float) getMaxPosition());
+			height = Mth.clamp(height, 32, y1 - y0 - 8);
+			int top = (int) getScrollAmount() * (y1 - y0 - height) / getMaxScroll() + y0;
+			if (top < y0) {
+				top = y0;
 			}
 			
-			guiGraphics.fill(left, getY(), right, getBottom(), (int) (2.35F * 255.0F) / 2 << 24);
+			guiGraphics.fill(left, y0, right, y1, (int) (2.35F * 255.0F) / 2 << 24);
 			guiGraphics.fill(left, top, right, top + height, (int) (1.9F * 255.0F) / 2 << 24);
 		}
 	}
-	
-	@Override
-	protected void enableScissor(GuiGraphics guiGraphics) {
-		guiGraphics.enableScissor(getX(), getY(), getRight(), getBottom());
-	}
 
-	@Override
-	public int getRowBottom(int index) {
+	protected int getRowBottom(int index) {
 		return getRowTop(index) + itemHeight;
 	}
 
