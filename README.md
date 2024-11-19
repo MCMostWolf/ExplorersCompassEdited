@@ -2,16 +2,9 @@
 
 Explorer's Compass is a Minecraft mod that allows you to search for and locate structures anywhere in the world. It is the sister mod of [Nature's Compass](https://github.com/MattCzyr/NaturesCompass), which allows you to locate biomes.
 
-Edited things:
-1. Do not search for structures around the player.
-2. It will not detect structures that have already been detected, but if it exceeds the detection range, it will clear the structures that have been searched and re-search, detecting the nearest structure.
-
 ## Download
 
-
-Original download url:Downloads, installation instructions, and more information can be found on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/explorers-compass).
-
-Edited download url:Downloads in this pages by release.
+Downloads, installation instructions, and more information can be found on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/explorers-compass).
 
 ## Develop
 
@@ -57,12 +50,6 @@ gradlew build
 ```
 
 This will build a jar file in `build/libs`.
-
-### Edited
-
-This edited mod edited path:
-`src/main/java/com/chaosthedude/explorerscompass/worker`.
-
 
 ## License
 
