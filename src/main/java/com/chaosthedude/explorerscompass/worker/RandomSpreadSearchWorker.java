@@ -1,6 +1,7 @@
 package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
+import java.util.Map;
 
 import com.mojang.datafixers.util.Pair;
 
@@ -22,8 +23,8 @@ public class RandomSpreadSearchWorker extends StructureSearchWorker<RandomSpread
 	private int x;
 	private int z;
 
-	public RandomSpreadSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, RandomSpreadStructurePlacement placement, List<Structure> structureSet, String managerId) {
-		super(level, player, stack, startPos, placement, structureSet, managerId);
+	public RandomSpreadSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, RandomSpreadStructurePlacement placement, List<Structure> structureSet, String managerId, Map<ChunkPos, Boolean> foundChunks) {
+		super(level, player, stack, startPos, placement, structureSet, managerId, foundChunks);
 
 		spacing = placement.spacing();
 		startSectionPosX = SectionPos.blockToSectionCoord(startPos.getX());

@@ -1,6 +1,7 @@
 package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
+import java.util.Map;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
@@ -15,7 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureCheckResult;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -23,7 +24,7 @@ import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement
 import net.minecraftforge.common.WorldWorkerManager;
 
 public abstract class StructureSearchWorker<T extends StructurePlacement> implements WorldWorkerManager.IWorker {
-	
+
 	protected String managerId;
 	protected ServerLevel level;
 	protected Player player;
@@ -35,8 +36,9 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	protected int samples;
 	protected boolean finished;
 	protected int lastRadiusThreshold;
+	protected Map<ChunkPos, Boolean> foundChunks;
 
-	public StructureSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, T placement, List<Structure> structureSet, String managerId) {
+	public StructureSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, T placement, List<Structure> structureSet, String managerId, Map<ChunkPos, Boolean> foundChunks) {
 		this.level = level;
 		this.player = player;
 		this.stack = stack;
@@ -44,10 +46,11 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		this.structureSet = structureSet;
 		this.placement = placement;
 		this.managerId = managerId;
-		
-		currentPos = startPos;
+		this.foundChunks = foundChunks;
+
+        currentPos = startPos;
 		samples = 0;
-		
+
 		finished = !level.getServer().getWorldData().worldGenOptions().generateStructures();
 	}
 
@@ -80,8 +83,30 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	}
 
 	protected Pair<BlockPos, Structure> getStructureGeneratingAt(ChunkPos chunkPos) {
+		// 计算玩家周围的4x4区块范围
+		BlockPos playerPos = player.blockPosition();
+		ChunkPos playerChunkPos = new ChunkPos(playerPos);
+		int playerChunkX = playerChunkPos.x;
+		int playerChunkZ = playerChunkPos.z;
+
+		// 确定4x4区块的范围
+		int minX = playerChunkX - 2;
+		int maxX = playerChunkX + 2;
+		int minZ = playerChunkZ - 2;
+		int maxZ = playerChunkZ + 2;
+
+		// 检查当前区块是否在4x4范围内
+		if (chunkPos.x >= minX && chunkPos.x <= maxX && chunkPos.z >= minZ && chunkPos.z <= maxZ) {
+			return null;
+		}
+
+		// 检查当前区块是否已经在foundChunks中
+		if (foundChunks.containsKey(chunkPos)) {
+			return null; // 跳过已找到的区块
+		}
+
 		for (Structure structure : structureSet) {
-			StructureCheckResult result = level.structureManager().checkStructurePresence(chunkPos, structure, placement, false);
+			StructureCheckResult result = level.structureManager().checkStructurePresence(chunkPos, structure, false);
 			if (result != StructureCheckResult.START_NOT_PRESENT) {
 				if (result == StructureCheckResult.START_PRESENT) {
 					return Pair.of(placement.getLocatePos(chunkPos), structure);
@@ -105,6 +130,15 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		} else {
 			ExplorersCompass.LOGGER.error("SearchWorkerManager " + managerId + ": " + getName() + " found invalid compass after successful search");
 		}
+		ChunkPos chunkPos = new ChunkPos(pos);
+		for(int a=0; a<=1; a++) {
+			for(int b=0; b<=1; b++) {
+				ChunkPos chunkPos1 = new ChunkPos(chunkPos.x + a, chunkPos.z + b);
+				ChunkPos chunkPos2 = new ChunkPos(chunkPos.x - a, chunkPos.z - b);
+				foundChunks.put(chunkPos1, true);
+				foundChunks.put(chunkPos2, true);
+			}
+		}
 		finished = true;
 	}
 
@@ -115,6 +149,7 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		} else {
 			ExplorersCompass.LOGGER.error("SearchWorkerManager " + managerId + ": " + getName() + " found invalid compass after failed search");
 		}
+		foundChunks.clear();
 		finished = true;
 	}
 
@@ -130,9 +165,8 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	protected int roundRadius(int radius, int roundTo) {
 		return ((int) radius / roundTo) * roundTo;
 	}
-	
-	protected abstract String getName();
-	
-	protected abstract boolean shouldLogRadius();
 
+	protected abstract String getName();
+
+	protected abstract boolean shouldLogRadius();
 }

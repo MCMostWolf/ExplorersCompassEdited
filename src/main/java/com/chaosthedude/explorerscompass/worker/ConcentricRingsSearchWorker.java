@@ -1,6 +1,7 @@
 package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
+import java.util.Map;
 
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.mojang.datafixers.util.Pair;
@@ -22,8 +23,8 @@ public class ConcentricRingsSearchWorker extends StructureSearchWorker<Concentri
 	private double minDistance;
 	private Pair<BlockPos, Structure> closest;
 
-	public ConcentricRingsSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, ConcentricRingsStructurePlacement placement, List<Structure> structureSet, String managerId) {
-		super(level, player, stack, startPos, placement, structureSet, managerId);
+	public ConcentricRingsSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, ConcentricRingsStructurePlacement placement, List<Structure> structureSet, String managerId, Map<ChunkPos, Boolean> foundChunks) {
+		super(level, player, stack, startPos, placement, structureSet, managerId, foundChunks);
 
 		minDistance = Double.MAX_VALUE;
 		chunkIndex = 0;
@@ -88,6 +89,7 @@ public class ConcentricRingsSearchWorker extends StructureSearchWorker<Concentri
 			return null;
 		} else {
 			Pair<BlockPos, Structure> closestPair = null;
+
 			double minDistance = Double.MAX_VALUE;
 			MutableBlockPos sampleBlockPos = new MutableBlockPos();
 			for (ChunkPos chunkPos : list) {

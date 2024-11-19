@@ -3,7 +3,9 @@ package com.chaosthedude.explorerscompass.worker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.world.level.ChunkPos;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import com.chaosthedude.explorerscompass.util.StructureUtils;
@@ -24,9 +26,11 @@ public class SearchWorkerManager {
 	private final String id = RandomStringUtils.random(8, "0123456789abcdef");
 	
 	private List<StructureSearchWorker<?>> workers;
-	
+	private Map<ChunkPos, Boolean> foundChunks;
+
 	public SearchWorkerManager() {
 		workers = new ArrayList<StructureSearchWorker<?>>();
+		foundChunks = new ConcurrentHashMap<>(); // 初始化foundChunks
 	}
 	
 	public void createWorkers(ServerLevel level, Player player, ItemStack stack, List<Structure> structures, BlockPos startPos) {
@@ -45,11 +49,11 @@ public class SearchWorkerManager {
 		for (Map.Entry<StructurePlacement, List<Structure>> entry : placementToStructuresMap.entrySet()) {
 			StructurePlacement placement = entry.getKey();
 			if (placement instanceof ConcentricRingsStructurePlacement) {
-				workers.add(new ConcentricRingsSearchWorker(level, player, stack, startPos, (ConcentricRingsStructurePlacement) placement, entry.getValue(), id));
+				workers.add(new ConcentricRingsSearchWorker(level, player, stack, startPos, (ConcentricRingsStructurePlacement) placement, entry.getValue(), id, foundChunks));
 			} else if (placement instanceof RandomSpreadStructurePlacement) {
-				workers.add(new RandomSpreadSearchWorker(level, player, stack, startPos, (RandomSpreadStructurePlacement) placement, entry.getValue(), id));
+				workers.add(new RandomSpreadSearchWorker(level, player, stack, startPos, (RandomSpreadStructurePlacement) placement, entry.getValue(), id, foundChunks));
 			} else {
-				workers.add(new GenericSearchWorker(level, player, stack, startPos, placement, entry.getValue(), id));
+				workers.add(new GenericSearchWorker(level, player, stack, startPos, placement, entry.getValue(), id, foundChunks));
 			}
 		}
 	}
