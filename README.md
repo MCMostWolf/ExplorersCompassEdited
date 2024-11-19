@@ -5,9 +5,9 @@ Explorer's Compass is a Minecraft mod that allows you to search for and locate s
 ## Download
 
 
-{Original download url}Downloads, installation instructions, and more information can be found on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/explorers-compass).
+Original download url:Downloads, installation instructions, and more information can be found on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/explorers-compass).
 
-{Edited download url}Downloads in this pages by release.
+Edited download url:Downloads in this pages by release.
 
 ## Develop
 
