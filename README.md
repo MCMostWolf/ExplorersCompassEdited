@@ -56,6 +56,8 @@ This will build a jar file in `build/libs`.
 
 ### Edited
 
+This edited mod edited path:
+`src/main/java/com/chaosthedude/explorerscompass/worker`.
 
 
 ## License
