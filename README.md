@@ -5,6 +5,7 @@ Explorer's Compass is a Minecraft mod that allows you to search for and locate s
 ## Download
 
 Downloads, installation instructions, and more information can be found on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/explorers-compass).
+You can download my edited mod in the github's release page.
 
 ## Develop
 
@@ -50,6 +51,12 @@ gradlew build
 ```
 
 This will build a jar file in `build/libs`.
+
+## Edited
+
+This mod implements the following features:
+1. Keep the player's surroundings from being searched
+2. Let the structure that has been searched no longer be searched, but if it can't be searched, the next time it will be re-searched to the nearest structure
 
 ## License
 
