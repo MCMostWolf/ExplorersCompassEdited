@@ -1,32 +1,35 @@
 package com.chaosthedude.explorerscompass.util;
 
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.ServerOpListEntry;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.level.storage.ServerLevelData;
+import net.minecraft.server.management.OpEntry;
+import net.minecraft.world.storage.IServerWorldInfo;
+import net.minecraft.world.storage.IWorldInfo;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSidedProvider;
 
 public class PlayerUtils {
 
-	public static boolean canTeleport(MinecraftServer server, Player player) {
-		return cheatModeEnabled(server, player) || isOp(player);
+	public static boolean canTeleport(PlayerEntity player) {
+		return cheatModeEnabled(player) || isOp(player);
 	}
 
-	public static boolean cheatModeEnabled(MinecraftServer server, Player player) {
-		if (server != null && server.isSingleplayer()) {
-			LevelData levelData = server.getLevel(player.level().dimension()).getLevelData();
-			if (levelData instanceof ServerLevelData) {
-				return ((ServerLevelData) levelData).getAllowCommands();
+	public static boolean cheatModeEnabled(PlayerEntity player) {
+		final MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
+		if (server != null && server.isSinglePlayer()) {
+			IWorldInfo worldInfo = server.getWorld(player.getEntityWorld().getDimensionKey()).getWorldInfo();
+			if (worldInfo instanceof IServerWorldInfo) {
+				return ((IServerWorldInfo) worldInfo).areCommandsAllowed();
 			}
 		}
 
 		return false;
 	}
 
-	public static boolean isOp(Player player) {
-		if (player instanceof ServerPlayer) {
-			final ServerOpListEntry userEntry = ((ServerPlayer) player).getServer().getPlayerList().getOps().get(player.getGameProfile());
+	public static boolean isOp(PlayerEntity player) {
+		if (player instanceof ServerPlayerEntity) {
+			final OpEntry userEntry = ((ServerPlayerEntity) player).getServer().getPlayerList().getOppedPlayers().getEntry(player.getGameProfile());
 			return userEntry != null;
 		}
 

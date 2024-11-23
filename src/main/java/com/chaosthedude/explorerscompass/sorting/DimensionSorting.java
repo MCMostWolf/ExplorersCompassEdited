@@ -3,8 +3,8 @@ package com.chaosthedude.explorerscompass.sorting;
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.util.StructureUtils;
 
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -12,23 +12,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class DimensionSorting implements ISorting {
 	
 	@Override
-	public int compare(ResourceLocation key1, ResourceLocation key2) {
-		return StructureUtils.dimensionKeysToString(ExplorersCompass.dimensionKeysForAllowedStructureKeys.get(key1)).compareTo(StructureUtils.dimensionKeysToString(ExplorersCompass.dimensionKeysForAllowedStructureKeys.get(key2)));
+	public int compare(Structure<?> structure1, Structure<?> structure2) {
+		return StructureUtils.structureDimensionsToString(ExplorersCompass.dimensionsForAllowedStructures.get(structure1)).compareTo(StructureUtils.structureDimensionsToString(ExplorersCompass.dimensionsForAllowedStructures.get(structure2)));
 	}
 
 	@Override
-	public Object getValue(ResourceLocation key) {
-		return StructureUtils.dimensionKeysToString(ExplorersCompass.dimensionKeysForAllowedStructureKeys.get(key));
+	public Object getValue(Structure<?> structure) {
+		return StructureUtils.structureDimensionsToString(ExplorersCompass.dimensionsForAllowedStructures.get(structure));
 	}
 
 	@Override
 	public ISorting next() {
-		return new GroupSorting();
+		return new CategorySorting();
 	}
 
 	@Override
 	public String getLocalizedName() {
-		return I18n.get("string.explorerscompass.dimension");
+		return I18n.format("string.explorerscompass.dimension");
 	}
 
 }

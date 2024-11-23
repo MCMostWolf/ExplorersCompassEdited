@@ -2,72 +2,64 @@ package com.chaosthedude.explorerscompass.gui;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.util.StructureUtils;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.gui.widget.list.ExtendedList.AbstractListEntry;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.Util;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class StructureSearchEntry extends ObjectSelectionList.Entry<StructureSearchEntry> {
+public class StructureSearchEntry extends AbstractListEntry<StructureSearchEntry> {
 
 	private final Minecraft mc;
 	private final ExplorersCompassScreen parentScreen;
-	private final ResourceLocation structureKey;
+	private final Structure<?> structure;
 	private final StructureSearchList structuresList;
 	private long lastClickTime;
 
-	public StructureSearchEntry(StructureSearchList structuresList, ResourceLocation structureKey) {
+	public StructureSearchEntry(StructureSearchList structuresList, Structure<?> structure) {
 		this.structuresList = structuresList;
-		this.structureKey = structureKey;
+		this.structure = structure;
 		parentScreen = structuresList.getParentScreen();
 		mc = Minecraft.getInstance();
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int par1, int par2, int par3, int par4, int par5, int par6, int par7, boolean par8, float par9) {
-		guiGraphics.drawString(mc.font, Component.literal(StructureUtils.getPrettyStructureName(structureKey)), par3 + 1, par2 + 1, 0xffffff);
-		guiGraphics.drawString(mc.font, Component.translatable(("string.explorerscompass.source")).append(Component.literal(": " + StructureUtils.getPrettyStructureSource(structureKey))), par3 + 1, par2 + mc.font.lineHeight + 3, 0x808080);
-		guiGraphics.drawString(mc.font, Component.translatable(("string.explorerscompass.group")).append(Component.literal(": ")).append(Component.translatable(StructureUtils.getPrettyStructureName(ExplorersCompass.structureKeysToTypeKeys.get(structureKey)))), par3 + 1, par2 + mc.font.lineHeight + 14, 0x808080);
-		guiGraphics.drawString(mc.font, Component.translatable(("string.explorerscompass.dimension")).append(Component.literal(": " + StructureUtils.dimensionKeysToString(ExplorersCompass.dimensionKeysForAllowedStructureKeys.get(structureKey)))), par3 + 1, par2 + mc.font.lineHeight + 25, 0x808080);
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+	public void render(MatrixStack matrixStack, int par1, int par2, int par3, int par4, int par5, int par6, int par7, boolean par8, float par9) {
+		mc.fontRenderer.func_243248_b(matrixStack, new StringTextComponent(StructureUtils.getStructureName(structure)), par3 + 1, par2 + 1, 0xffffff);
+		mc.fontRenderer.func_243248_b(matrixStack, new TranslationTextComponent(("string.explorerscompass.source")).append(new StringTextComponent(": " + StructureUtils.getStructureSource(structure))), par3 + 1, par2 + mc.fontRenderer.FONT_HEIGHT + 3, 0x808080);
+		mc.fontRenderer.func_243248_b(matrixStack, new TranslationTextComponent(("string.explorerscompass.category")).append(new StringTextComponent(": ")).append(new TranslationTextComponent(("string.explorerscompass." + structure.getDecorationStage().toString().toLowerCase()))), par3 + 1, par2 + mc.fontRenderer.FONT_HEIGHT + 14, 0x808080);
+		mc.fontRenderer.func_243248_b(matrixStack, new TranslationTextComponent(("string.explorerscompass.dimension")).append(new StringTextComponent(": " + StructureUtils.structureDimensionsToString(ExplorersCompass.dimensionsForAllowedStructures.get(structure)))), par3 + 1, par2 + mc.fontRenderer.FONT_HEIGHT + 25, 0x808080);
+		RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (button == 0) {
 			structuresList.selectStructure(this);
-			if (Util.getMillis() - lastClickTime < 250L) {
-				searchForStructure();
+			if (Util.milliTime() - lastClickTime < 250L) {
+				searchForBiome();
 				return true;
 			} else {
-				lastClickTime = Util.getMillis();
+				lastClickTime = Util.milliTime();
 				return false;
 			}
 		}
 		return false;
 	}
-	
-	@Override
-	public Component getNarration() {
-		return Component.literal(StructureUtils.getPrettyStructureName(structureKey));
-	}
 
-	public void searchForStructure() {
-		mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-		parentScreen.searchForStructure(structureKey);
-	}
-	
-	public void searchForGroup() {
-		mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-		parentScreen.searchForGroup(ExplorersCompass.structureKeysToTypeKeys.get(structureKey));
+	public void searchForBiome() {
+		mc.getSoundHandler().play(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		parentScreen.searchForStructure(structure);
 	}
 
 }

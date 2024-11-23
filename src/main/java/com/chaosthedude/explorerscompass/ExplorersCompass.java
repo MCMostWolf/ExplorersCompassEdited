@@ -15,25 +15,21 @@ import com.chaosthedude.explorerscompass.network.CompassSearchPacket;
 import com.chaosthedude.explorerscompass.network.SyncPacket;
 import com.chaosthedude.explorerscompass.network.TeleportPacket;
 import com.chaosthedude.explorerscompass.util.CompassState;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.ClampedItemPropertyFunction;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.decoration.ItemFrame;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.item.ItemFrameEntity;
+import net.minecraft.item.IItemPropertyGetter;
+import net.minecraft.item.ItemModelsProperties;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -41,8 +37,8 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.fml.network.NetworkRegistry;
+import net.minecraftforge.fml.network.simple.SimpleChannel;
 
 @Mod(ExplorersCompass.MODID)
 public class ExplorersCompass {
@@ -55,24 +51,20 @@ public class ExplorersCompass {
 	public static ExplorersCompassItem explorersCompass;
 
 	public static boolean canTeleport;
-	public static List<ResourceLocation> allowedStructureKeys;
-	public static ListMultimap<ResourceLocation, ResourceLocation> dimensionKeysForAllowedStructureKeys;
-	public static Map<ResourceLocation, ResourceLocation> structureKeysToTypeKeys;
-	public static ListMultimap<ResourceLocation, ResourceLocation> typeKeysToStructureKeys;
-	
+	public static List<Structure<?>> allowedStructures;
+	public static Map<Structure<?>, List<ResourceLocation>> dimensionsForAllowedStructures;
+
 	public ExplorersCompass() {
-		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::buildCreativeTabContents);
-		
+		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::preInit);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
+			FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientInit);
 		});
 		
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHandler.GENERAL_SPEC);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigHandler.CLIENT_SPEC);
 	}
 
-	private void commonSetup(FMLCommonSetupEvent event) {
+	private void preInit(FMLCommonSetupEvent event) {
 		network = NetworkRegistry.newSimpleChannel(new ResourceLocation(MODID, MODID), () -> "1.0", s -> true, s -> true);
 
 		// Server packets
@@ -82,93 +74,81 @@ public class ExplorersCompass {
 		// Client packet
 		network.registerMessage(2, SyncPacket.class, SyncPacket::toBytes, SyncPacket::new, SyncPacket::handle);
 
-		allowedStructureKeys = new ArrayList<ResourceLocation>();
-		dimensionKeysForAllowedStructureKeys = ArrayListMultimap.create();
-		structureKeysToTypeKeys = new HashMap<ResourceLocation, ResourceLocation>();
-		typeKeysToStructureKeys = ArrayListMultimap.create();
-	}
-	
-	private void buildCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
-		if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-			event.accept(new ItemStack(explorersCompass));
-		}
+		allowedStructures = new ArrayList<Structure<?>>();
+		dimensionsForAllowedStructures = new HashMap<Structure<?>, List<ResourceLocation>>();
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	public void clientSetup(FMLClientSetupEvent event) {
+	public void clientInit(FMLClientSetupEvent event) {
 		MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
 		
-		event.enqueueWork(() -> {
-			ItemProperties.register(explorersCompass, new ResourceLocation("angle"), new ClampedItemPropertyFunction() {
-				@OnlyIn(Dist.CLIENT)
-				private double rotation;
-				@OnlyIn(Dist.CLIENT)
-				private double rota;
-				@OnlyIn(Dist.CLIENT)
-				private long lastUpdateTick;
-	
-				@OnlyIn(Dist.CLIENT)
-				@Override
-				public float unclampedCall(ItemStack stack, ClientLevel world, LivingEntity entityLiving, int seed) {
-					if (entityLiving == null && !stack.isFramed()) {
-						return 0.0F;
+		ItemModelsProperties.registerProperty(explorersCompass, new ResourceLocation("angle"), new IItemPropertyGetter() {
+			@OnlyIn(Dist.CLIENT)
+			private double rotation;
+			@OnlyIn(Dist.CLIENT)
+			private double rota;
+			@OnlyIn(Dist.CLIENT)
+			private long lastUpdateTick;
+
+			@OnlyIn(Dist.CLIENT)
+			@Override
+			public float call(ItemStack stack, ClientWorld world, LivingEntity entityLiving) {
+				if (entityLiving == null && !stack.isOnItemFrame()) {
+					return 0.0F;
+				} else {
+					final boolean entityExists = entityLiving != null;
+					final Entity entity = (Entity) (entityExists ? entityLiving : stack.getItemFrame());
+					if (world == null && entity.world instanceof ClientWorld) {
+						world = (ClientWorld) entity.world;
+					}
+
+					double rotation = entityExists ? (double) entity.rotationYaw : getFrameRotation((ItemFrameEntity) entity);
+					rotation = rotation % 360.0D;
+					double adjusted = Math.PI - ((rotation - 90.0D) * 0.01745329238474369D - getAngle(world, entity, stack));
+
+					if (entityExists) {
+						adjusted = wobble(world, adjusted);
+					}
+
+					final float f = (float) (adjusted / (Math.PI * 2D));
+					return MathHelper.positiveModulo(f, 1.0F);
+				}
+			}
+
+			@OnlyIn(Dist.CLIENT)
+			private double wobble(ClientWorld world, double amount) {
+				if (world.getGameTime() != lastUpdateTick) {
+					lastUpdateTick = world.getGameTime();
+					double d0 = amount - rotation;
+					d0 = d0 % (Math.PI * 2D);
+					d0 = MathHelper.clamp(d0, -1.0D, 1.0D);
+					rota += d0 * 0.1D;
+					rota *= 0.8D;
+					rotation += rota;
+				}
+
+				return rotation;
+			}
+
+			@OnlyIn(Dist.CLIENT)
+			private double getFrameRotation(ItemFrameEntity itemFrame) {
+				return (double) MathHelper.wrapDegrees(180 + itemFrame.getHorizontalFacing().getHorizontalIndex() * 90);
+			}
+
+			@OnlyIn(Dist.CLIENT)
+			private double getAngle(ClientWorld world, Entity entity, ItemStack stack) {
+				if (stack.getItem() == explorersCompass) {
+					ExplorersCompassItem compassItem = (ExplorersCompassItem) stack.getItem();
+					BlockPos pos;
+					if (compassItem.getState(stack) == CompassState.FOUND) {
+						pos = new BlockPos(compassItem.getFoundStructureX(stack), 0, compassItem.getFoundStructureZ(stack));
 					} else {
-						final boolean entityExists = entityLiving != null;
-						final Entity entity = (Entity) (entityExists ? entityLiving : stack.getFrame());
-						if (world == null && entity.level() instanceof ClientLevel) {
-							world = (ClientLevel) entity.level();
-						}
-	
-						double rotation = entityExists ? (double) entity.getYRot() : getFrameRotation((ItemFrame) entity);
-						rotation = rotation % 360.0D;
-						double adjusted = Math.PI - ((rotation - 90.0D) * 0.01745329238474369D - getAngle(world, entity, stack));
-	
-						if (entityExists) {
-							adjusted = wobble(world, adjusted);
-						}
-	
-						final float f = (float) (adjusted / (Math.PI * 2D));
-						return Mth.positiveModulo(f, 1.0F);
+						pos = world.func_239140_u_();
 					}
+					return Math.atan2((double) pos.getZ() - entity.getPositionVec().z, (double) pos.getX() - entity.getPositionVec().x);
 				}
-	
-				@OnlyIn(Dist.CLIENT)
-				private double wobble(ClientLevel world, double amount) {
-					if (world.getGameTime() != lastUpdateTick) {
-						lastUpdateTick = world.getGameTime();
-						double d0 = amount - rotation;
-						d0 = Mth.positiveModulo(d0 + Math.PI, Math.PI * 2D) - Math.PI;
-						d0 = Mth.clamp(d0, -1.0D, 1.0D);
-						rota += d0 * 0.1D;
-						rota *= 0.8D;
-						rotation += rota;
-					}
-	
-					return rotation;
-				}
-	
-				@OnlyIn(Dist.CLIENT)
-				private double getFrameRotation(ItemFrame itemFrame) {
-					Direction direction = itemFrame.getDirection();
-					int i = direction.getAxis().isVertical() ? 90 * direction.getAxisDirection().getStep() : 0;
-					return (double)Mth.wrapDegrees(180 + direction.get2DDataValue() * 90 + itemFrame.getRotation() * 45 + i);
-				}
-	
-				@OnlyIn(Dist.CLIENT)
-				private double getAngle(ClientLevel world, Entity entity, ItemStack stack) {
-					if (stack.getItem() == explorersCompass) {
-						ExplorersCompassItem compassItem = (ExplorersCompassItem) stack.getItem();
-						BlockPos pos;
-						if (compassItem.getState(stack) == CompassState.FOUND) {
-							pos = new BlockPos(compassItem.getFoundStructureX(stack), 0, compassItem.getFoundStructureZ(stack));
-						} else {
-							pos = world.getSharedSpawnPos();
-						}
-						return Math.atan2((double) pos.getZ() - entity.position().z(), (double) pos.getX() - entity.position().x());
-					}
-					return 0.0D;
-				}
-			});
+				return 0.0D;
+			}
 		});
 	}
 

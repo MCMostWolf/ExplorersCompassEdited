@@ -2,16 +2,17 @@ package com.chaosthedude.explorerscompass.gui;
 
 import java.util.Objects;
 
+import com.chaosthedude.explorerscompass.util.RenderUtils;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.client.gui.widget.list.ExtendedList;
+import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class StructureSearchList extends ObjectSelectionList<StructureSearchEntry> {
+public class StructureSearchList extends ExtendedList<StructureSearchEntry> {
 
 	private final ExplorersCompassScreen parentScreen;
 
@@ -33,53 +34,48 @@ public class StructureSearchList extends ObjectSelectionList<StructureSearchEntr
 
 	@Override
 	protected boolean isSelectedItem(int slotIndex) {
-		return slotIndex >= 0 && slotIndex < children().size() ? children().get(slotIndex).equals(getSelected()) : false;
+		return slotIndex >= 0 && slotIndex < getEventListeners().size() ? getEventListeners().get(slotIndex).equals(getSelected()) : false;
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-		renderList(guiGraphics, mouseX, mouseY, partialTicks);
+	public void render(MatrixStack matrixStack, int par1, int par2, float par3) {
+		int i = getScrollbarPosition();
+		int k = getRowLeft();
+		int l = y0 + 4 - (int) getScrollAmount();
+
+		renderList(matrixStack, k, l, par1, par2, par3);
 	}
 
 	@Override
-	protected void renderList(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-		for (int j = 0; j < getItemCount(); ++j) {
-			int rowTop = getRowTop(j);
-			int rowBottom = getRowBottom(j);
-			if (rowBottom >= y0 && rowTop <= y1) {
-				int j1 = itemHeight - 4;
-				StructureSearchEntry entry = getEntry(j);
+	protected void renderList(MatrixStack matrixStack, int par1, int par2, int par3, int par4, float par5) {
+		int i = getItemCount();
+		for (int j = 0; j < i; ++j) {
+			int k = getRowTop(j);
+			int l = getRowBottom(j);
+			if (l >= y0 && k <= y1) {
+				int j1 = this.itemHeight - 4;
+				StructureSearchEntry e = getEntry(j);
+				int k1 = getRowWidth();
 				if (/*renderSelection*/ true && isSelectedItem(j)) {
 					final int insideLeft = x0 + width / 2 - getRowWidth() / 2 + 2;
-					guiGraphics.fill(insideLeft - 4, rowTop - 4, insideLeft + getRowWidth() + 4, rowTop + itemHeight, 255 / 2 << 24);
+					RenderUtils.drawRect(insideLeft - 4, k - 4, insideLeft + getRowWidth() + 4, k + itemHeight, 255 / 2 << 24);
 				}
-				entry.render(guiGraphics, j, rowTop, getRowLeft(), getRowWidth(), j1, mouseX, mouseY, isMouseOver((double) mouseX, (double) mouseY) && Objects.equals(getEntryAtPosition((double) mouseX, (double) mouseY), entry), partialTicks);
+
+				int j2 = getRowLeft();
+				e.render(matrixStack, j, k, j2, k1, j1, par3, par4, isMouseOver((double) par3, (double) par4) && Objects .equals(getEntryAtPosition((double) par3, (double) par4), e), par5);
 			}
 		}
 
-		if (getMaxScroll() > 0) {
-			int left = getScrollbarPosition();
-			int right = left + 6;
-			int height = (int) ((float) ((y1 - y0) * (y1 - y0)) / (float) getMaxPosition());
-			height = Mth.clamp(height, 32, y1 - y0 - 8);
-			int top = (int) getScrollAmount() * (y1 - y0 - height) / getMaxScroll() + y0;
-			if (top < y0) {
-				top = y0;
-			}
-			
-			guiGraphics.fill(left, y0, right, y1, (int) (2.35F * 255.0F) / 2 << 24);
-			guiGraphics.fill(left, top, right, top + height, (int) (1.9F * 255.0F) / 2 << 24);
-		}
 	}
 
-	protected int getRowBottom(int index) {
-		return getRowTop(index) + itemHeight;
+	private int getRowBottom(int p_getRowBottom_1_) {
+		return this.getRowTop(p_getRowBottom_1_) + this.itemHeight;
 	}
 
 	public void refreshList() {
 		clearEntries();
-		for (ResourceLocation key : parentScreen.sortStructures()) {
-			addEntry(new StructureSearchEntry(this, key));
+		for (Structure<?> structure : parentScreen.sortStructures()) {
+			addEntry(new StructureSearchEntry(this, structure));
 		}
 		selectStructure(null);
 		setScrollAmount(0);

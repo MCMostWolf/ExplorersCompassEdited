@@ -2,7 +2,6 @@ package com.chaosthedude.explorerscompass.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.chaosthedude.explorerscompass.client.OverlaySide;
 
@@ -37,13 +36,13 @@ public class ConfigHandler {
 			displayCoordinates = builder.comment(desc).define("displayCoordinates", true);
 
 			desc = "The maximum radius that will be searched for a structure. Raising this value will increase search accuracy but will potentially make the process more resource intensive.";
-			maxRadius = builder.comment(desc).defineInRange("maxRadius", 10000, 0, 1000000);
+			maxRadius = builder.comment(desc).defineInRange("maxRadius", 5000, 0, 1000000);
 
-			desc = "A list of structures that the compass will not display in the GUI and will not be able to search for. Wildcard character * can be used to match any number of characters, and ? can be used to match one character. Ex: [\"minecraft:stronghold\", \"minecraft:endcity\", \"minecraft:*village*\"]";
+			desc = "A list of structures that the compass will not be able to search for, specified by resource location. The wildcard character * can be used to match any number of characters, and ? can be used to match one character. Ex: [\"minecraft:stronghold\", \"minecraft:endcity\", \"minecraft:*village*\"]";
 			structureBlacklist = builder.comment(desc).define("structureBlacklist", new ArrayList<String>());
 
 			desc = "The maximum number of samples to be taken when searching for a structure.";
-			maxSamples = builder.comment(desc).defineInRange("maxSamples", 100000, 0, 100000000);
+			maxSamples = builder.comment(desc).defineInRange("maxSamples", 50000, 0, 1000000);
 
 			builder.pop();
 		}
