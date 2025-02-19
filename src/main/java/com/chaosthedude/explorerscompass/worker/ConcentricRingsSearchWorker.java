@@ -2,6 +2,7 @@ package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.mojang.datafixers.util.Pair;
@@ -23,7 +24,7 @@ public class ConcentricRingsSearchWorker extends StructureSearchWorker<Concentri
 	private double minDistance;
 	private Pair<BlockPos, Structure> closest;
 
-	public ConcentricRingsSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, ConcentricRingsStructurePlacement placement, List<Structure> structureSet, String managerId, Map<ChunkPos, Boolean> foundChunks) {
+	public ConcentricRingsSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, ConcentricRingsStructurePlacement placement, List<Structure> structureSet, String managerId, List<Pair<UUID, ChunkPos>> foundChunks) {
 		super(level, player, stack, startPos, placement, structureSet, managerId, foundChunks);
 
 		minDistance = Double.MAX_VALUE;

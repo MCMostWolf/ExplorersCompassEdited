@@ -2,8 +2,10 @@ package com.chaosthedude.explorerscompass.items;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
+import com.chaosthedude.explorerscompass.config.BetterUI;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.chaosthedude.explorerscompass.gui.GuiWrapper;
 import com.chaosthedude.explorerscompass.network.SyncPacket;
@@ -30,7 +32,9 @@ import net.minecraftforge.network.NetworkDirection;
 public class ExplorersCompassItem extends Item {
 
 	public static final String NAME = "explorerscompass";
-	
+
+	private static int haveFoundTimes = 0;
+
 	private SearchWorkerManager workerManager;
 
 	public ExplorersCompassItem() {
@@ -86,6 +90,12 @@ public class ExplorersCompassItem extends Item {
 	
 	public void succeed(ItemStack stack, ResourceLocation structureKey, int x, int z, int samples, boolean displayCoordinates) {
 		setFound(stack, structureKey, x, z, samples);
+		List<Map.Entry<String, Integer>> entries = BetterUI.getEntries();
+		for (Map.Entry<String, Integer> entry : entries) {
+			if (structureKey.toString().equals(entry.getKey())) {
+				stack.getTag().putInt("CustomModelData", entry.getValue());
+			}
+		}
 		setDisplayCoordinates(stack, displayCoordinates);
 		workerManager.clear();
 	}

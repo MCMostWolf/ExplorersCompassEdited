@@ -2,16 +2,21 @@ package com.chaosthedude.explorerscompass.network;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
 import com.chaosthedude.explorerscompass.util.ItemUtils;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.network.NetworkEvent;
 
 public class CompassSearchPacket {
@@ -21,7 +26,6 @@ public class CompassSearchPacket {
 	private int x;
 	private int y;
 	private int z;
-
 	public CompassSearchPacket() {}
 
 	public CompassSearchPacket(ResourceLocation groupKey, List<ResourceLocation> structureKeys, BlockPos pos) {
@@ -36,7 +40,7 @@ public class CompassSearchPacket {
 	public CompassSearchPacket(FriendlyByteBuf buf) {
 		groupKey = buf.readResourceLocation();
 		
-		structureKeys = new ArrayList<ResourceLocation>();
+		structureKeys = new ArrayList<>();
 		int numStructures = buf.readInt();
 		for (int i = 0; i < numStructures; i++) {
 			structureKeys.add(buf.readResourceLocation());

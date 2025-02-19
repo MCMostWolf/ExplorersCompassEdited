@@ -2,7 +2,6 @@ package com.chaosthedude.explorerscompass.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.chaosthedude.explorerscompass.client.OverlaySide;
 
@@ -40,7 +39,7 @@ public class ConfigHandler {
 			maxRadius = builder.comment(desc).defineInRange("maxRadius", 10000, 0, 1000000);
 
 			desc = "A list of structures that the compass will not display in the GUI and will not be able to search for. Wildcard character * can be used to match any number of characters, and ? can be used to match one character. Ex: [\"minecraft:stronghold\", \"minecraft:endcity\", \"minecraft:*village*\"]";
-			structureBlacklist = builder.comment(desc).define("structureBlacklist", new ArrayList<String>());
+			structureBlacklist = builder.comment(desc).define("structureBlacklist", new ArrayList<>());
 
 			desc = "The maximum number of samples to be taken when searching for a structure.";
 			maxSamples = builder.comment(desc).defineInRange("maxSamples", 100000, 0, 100000000);
@@ -54,6 +53,7 @@ public class ConfigHandler {
 		public final ForgeConfigSpec.BooleanValue translateStructureNames;
 		public final ForgeConfigSpec.EnumValue<OverlaySide> overlaySide;
 		public final ForgeConfigSpec.IntValue overlayLineOffset;
+		public final ForgeConfigSpec.BooleanValue haveFoundStructure;
 
 		Client(ForgeConfigSpec.Builder builder) {
 			String desc;
@@ -71,8 +71,9 @@ public class ConfigHandler {
 			desc = "The side for information rendered on the HUD. Ex: LEFT, RIGHT";
 			overlaySide = builder.comment(desc).defineEnum("overlaySide", OverlaySide.LEFT);
 
+			desc = "If this option is enabled, then show the structures that have been searched in the past.";
+			haveFoundStructure = builder.comment(desc).define("haveFoundStructure", true);
 			builder.pop();
 		}
 	}
-
 }

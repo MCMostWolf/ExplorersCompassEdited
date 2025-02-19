@@ -1,10 +1,13 @@
 package com.chaosthedude.explorerscompass;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.chaosthedude.explorerscompass.config.BetterUI;
+import com.chaosthedude.explorerscompass.network.CleanFoundPacket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -70,6 +73,7 @@ public class ExplorersCompass {
 		
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHandler.GENERAL_SPEC);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigHandler.CLIENT_SPEC);
+
 	}
 
 	private void commonSetup(FMLCommonSetupEvent event) {
@@ -82,10 +86,14 @@ public class ExplorersCompass {
 		// Client packet
 		network.registerMessage(2, SyncPacket.class, SyncPacket::toBytes, SyncPacket::new, SyncPacket::handle);
 
+		network.registerMessage(3, CleanFoundPacket.class, CleanFoundPacket::toBytes, CleanFoundPacket::new, CleanFoundPacket::handle);
+
 		allowedStructureKeys = new ArrayList<ResourceLocation>();
 		dimensionKeysForAllowedStructureKeys = ArrayListMultimap.create();
 		structureKeysToTypeKeys = new HashMap<ResourceLocation, ResourceLocation>();
 		typeKeysToStructureKeys = ArrayListMultimap.create();
+
+		BetterUI.loadConfig(MODID);
 	}
 	
 	private void buildCreativeTabContents(BuildCreativeModeTabContentsEvent event) {

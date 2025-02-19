@@ -1,7 +1,7 @@
 package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
@@ -36,9 +36,9 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	protected int samples;
 	protected boolean finished;
 	protected int lastRadiusThreshold;
-	protected Map<ChunkPos, Boolean> foundChunks;
-
-	public StructureSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, T placement, List<Structure> structureSet, String managerId, Map<ChunkPos, Boolean> foundChunks) {
+	protected List<Pair<UUID, ChunkPos>> foundChunks;
+	
+	public StructureSearchWorker(ServerLevel level, Player player, ItemStack stack, BlockPos startPos, T placement, List<Structure> structureSet, String managerId, List<Pair<UUID, ChunkPos>> foundChunks) {
 		this.level = level;
 		this.player = player;
 		this.stack = stack;
@@ -101,8 +101,8 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		}
 
 		// 检查当前区块是否已经在foundChunks中
-		if (foundChunks.containsKey(chunkPos)) {
-			return null; // 跳过已找到的区块
+		if (foundChunks.contains(Pair.of(player.getUUID(), chunkPos))) {
+			return null;
 		}
 
 		for (Structure structure : structureSet) {
@@ -131,14 +131,7 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 			ExplorersCompass.LOGGER.error("SearchWorkerManager " + managerId + ": " + getName() + " found invalid compass after successful search");
 		}
 		ChunkPos chunkPos = new ChunkPos(pos);
-		for(int a=0; a<=1; a++) {
-			for(int b=0; b<=1; b++) {
-				ChunkPos chunkPos1 = new ChunkPos(chunkPos.x + a, chunkPos.z + b);
-				ChunkPos chunkPos2 = new ChunkPos(chunkPos.x - a, chunkPos.z - b);
-				foundChunks.put(chunkPos1, true);
-				foundChunks.put(chunkPos2, true);
-			}
-		}
+        foundChunks.add(Pair.of(player.getUUID(), chunkPos));
 		finished = true;
 	}
 

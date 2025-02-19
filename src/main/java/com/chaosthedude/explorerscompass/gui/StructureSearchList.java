@@ -51,7 +51,8 @@ public class StructureSearchList extends ObjectSelectionList<StructureSearchEntr
 				StructureSearchEntry entry = getEntry(j);
 				if (/*renderSelection*/ true && isSelectedItem(j)) {
 					final int insideLeft = x0 + width / 2 - getRowWidth() / 2 + 2;
-					guiGraphics.fill(insideLeft - 4, rowTop - 4, insideLeft + getRowWidth() + 4, rowTop + itemHeight, 255 / 2 << 24);
+					guiGraphics.fill(insideLeft - 4, rowTop - 4, insideLeft + getRowWidth(), rowTop + itemHeight - 4, 0xFF000000);
+					drawBorder(guiGraphics, insideLeft - 4, rowTop-4, getRowWidth() + 4, itemHeight + 4);
 				}
 				entry.render(guiGraphics, j, rowTop, getRowLeft(), getRowWidth(), j1, mouseX, mouseY, isMouseOver((double) mouseX, (double) mouseY) && Objects.equals(getEntryAtPosition((double) mouseX, (double) mouseY), entry), partialTicks);
 			}
@@ -96,6 +97,17 @@ public class StructureSearchList extends ObjectSelectionList<StructureSearchEntr
 
 	public ExplorersCompassScreen getParentScreen() {
 		return parentScreen;
+	}
+
+	private void drawBorder(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+		// 上边框
+		guiGraphics.fill(x, y, x + width, y + 1, 0xDDDDDDDD);
+		// 下边框
+		guiGraphics.fill(x, y + height - 1, x + width, y + height, 0xDDDDDDDD);
+		// 左边框
+		guiGraphics.fill(x, y, x + 1, y + height, 0xDDDDDDDD);
+		// 右边框
+		guiGraphics.fill(x + width - 1, y, x + width, y + height, 0xDDDDDDDD);
 	}
 
 }

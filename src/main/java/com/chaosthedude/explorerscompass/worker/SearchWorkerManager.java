@@ -3,8 +3,10 @@ package com.chaosthedude.explorerscompass.worker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.level.ChunkPos;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -26,11 +28,11 @@ public class SearchWorkerManager {
 	private final String id = RandomStringUtils.random(8, "0123456789abcdef");
 	
 	private List<StructureSearchWorker<?>> workers;
-	private Map<ChunkPos, Boolean> foundChunks;
+	public static List<Pair<UUID, ChunkPos>> foundChunks;
 
 	public SearchWorkerManager() {
 		workers = new ArrayList<StructureSearchWorker<?>>();
-		foundChunks = new ConcurrentHashMap<>(); // 初始化foundChunks
+		foundChunks = new ArrayList<>(); // 初始化foundChunks
 	}
 	
 	public void createWorkers(ServerLevel level, Player player, ItemStack stack, List<Structure> structures, BlockPos startPos) {

@@ -1,11 +1,10 @@
 package com.chaosthedude.explorerscompass.gui;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
+import com.chaosthedude.explorerscompass.network.CleanFoundPacket;
 import com.chaosthedude.explorerscompass.network.CompassSearchPacket;
 import com.chaosthedude.explorerscompass.network.TeleportPacket;
 import com.chaosthedude.explorerscompass.sorting.ISorting;
@@ -13,6 +12,8 @@ import com.chaosthedude.explorerscompass.sorting.NameSorting;
 import com.chaosthedude.explorerscompass.util.CompassState;
 import com.chaosthedude.explorerscompass.util.StructureUtils;
 
+import com.chaosthedude.explorerscompass.worker.SearchWorkerManager;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -38,9 +40,11 @@ public class ExplorersCompassScreen extends Screen {
 	private Button sortByButton;
 	private Button teleportButton;
 	private Button cancelButton;
+	private Button cleanMapButton;
 	private TransparentTextField searchTextField;
 	private StructureSearchList selectionList;
 	private ISorting sortingCategory;
+	private List<ChunkPos> foundChunks;
 
 	public ExplorersCompassScreen(Level level, Player player, ItemStack stack, ExplorersCompassItem explorersCompass, List<ResourceLocation> allowedStructureKeys) {
 		super(Component.translatable("string.explorerscompass.selectStructure"));
@@ -155,6 +159,10 @@ public class ExplorersCompassScreen extends Screen {
 			if (selectionList.hasSelection()) {
 				selectionList.getSelected().searchForStructure();
 			}
+		}));
+		cleanMapButton= addRenderableWidget(new TransparentButton(10, 115, 110, 20, Component.translatable("string.explorerscompass.cleanMap"), (onPress) -> {
+			ExplorersCompass.network.sendToServer(new CleanFoundPacket(player.getUUID()));
+			minecraft.setScreen(null);
 		}));
 		searchGroupButton = addRenderableWidget(new TransparentButton(10, 65, 110, 20, Component.translatable("string.explorerscompass.searchForGroup"), (onPress) -> {
 			if (selectionList.hasSelection()) {
