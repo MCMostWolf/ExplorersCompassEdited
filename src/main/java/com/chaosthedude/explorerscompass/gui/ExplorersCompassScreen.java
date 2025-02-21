@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
+import com.chaosthedude.explorerscompass.network.CleanCachePacket;
 import com.chaosthedude.explorerscompass.network.CompassSearchPacket;
 import com.chaosthedude.explorerscompass.network.TeleportPacket;
 import com.chaosthedude.explorerscompass.sorting.ISorting;
@@ -38,6 +39,7 @@ public class ExplorersCompassScreen extends Screen {
 	private Button startSearchButton;
 	private Button sortByButton;
 	private Button teleportButton;
+	private Button cleanCacheButton;
 	private Button cancelButton;
 	private TransparentTextField searchTextField;
 	private StructureSearchList selectionList;
@@ -164,6 +166,10 @@ public class ExplorersCompassScreen extends Screen {
 			sortingCategory = sortingCategory.next();
 			sortByButton.setMessage(new TranslationTextComponent("string.explorerscompass.sortBy").append(new StringTextComponent(": " + sortingCategory.getLocalizedName())));
 			selectionList.refreshList();
+		}));
+		cleanCacheButton = addButton(new TransparentButton(10, 90, 110, 20, new TranslationTextComponent("string.explorerscompass.clean_cache"), (onPress) -> {
+			ExplorersCompass.network.sendToServer(new CleanCachePacket(player.getUniqueID()));
+			minecraft.displayGuiScreen(null);
 		}));
 		cancelButton = addButton(new TransparentButton(10, height - 30, 110, 20, new TranslationTextComponent("gui.cancel"), (onPress) -> {
 			minecraft.displayGuiScreen(null);

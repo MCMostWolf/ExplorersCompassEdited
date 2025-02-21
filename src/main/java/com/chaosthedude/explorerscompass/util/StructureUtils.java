@@ -4,9 +4,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.Hash;
-import net.minecraft.util.math.vector.Vector2f;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.gen.ChunkGenerator;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -28,7 +25,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class StructureUtils {
-	public static Map<Pair<Integer,Integer>, Boolean> foundStructures = new ConcurrentHashMap<>();
+	public static List<Pair<UUID, Pair<Integer, Integer>>> haveFound = new ArrayList<>();
 	public static ResourceLocation getKeyForStructure(Structure<?> structure) {
 		return ForgeRegistries.STRUCTURE_FEATURES.getKey(structure);
 	}

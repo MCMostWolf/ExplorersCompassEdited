@@ -24,6 +24,7 @@ public class ConfigHandler {
 		public final ForgeConfigSpec.IntValue maxRadius;
 		public final ForgeConfigSpec.ConfigValue<List<String>> structureBlacklist;
 		public final ForgeConfigSpec.IntValue maxSamples;
+		public final ForgeConfigSpec.BooleanValue cleanCache;
 
 		General(ForgeConfigSpec.Builder builder) {
 			String desc;
@@ -39,10 +40,13 @@ public class ConfigHandler {
 			maxRadius = builder.comment(desc).defineInRange("maxRadius", 5000, 0, 1000000);
 
 			desc = "A list of structures that the compass will not be able to search for, specified by resource location. The wildcard character * can be used to match any number of characters, and ? can be used to match one character. Ex: [\"minecraft:stronghold\", \"minecraft:endcity\", \"minecraft:*village*\"]";
-			structureBlacklist = builder.comment(desc).define("structureBlacklist", new ArrayList<String>());
+			structureBlacklist = builder.comment(desc).define("structureBlacklist", new ArrayList<>());
 
 			desc = "The maximum number of samples to be taken when searching for a structure.";
 			maxSamples = builder.comment(desc).defineInRange("maxSamples", 50000, 0, 1000000);
+
+			desc = "If this option is enabled, then the compass will clear the cache of previously found structures when the structure couldn't found.";
+			cleanCache = builder.comment(desc).define("cleanCache", false);
 
 			builder.pop();
 		}
@@ -53,6 +57,8 @@ public class ConfigHandler {
 		public final ForgeConfigSpec.BooleanValue translateStructureNames;
 		public final ForgeConfigSpec.EnumValue<OverlaySide> overlaySide;
 		public final ForgeConfigSpec.IntValue overlayLineOffset;
+		public final ForgeConfigSpec.BooleanValue showHaveFound;
+		public final ForgeConfigSpec.BooleanValue newWayPoint;
 
 		Client(ForgeConfigSpec.Builder builder) {
 			String desc;
@@ -69,6 +75,12 @@ public class ConfigHandler {
 
 			desc = "The side for information rendered on the HUD. Ex: LEFT, RIGHT";
 			overlaySide = builder.comment(desc).defineEnum("overlaySide", OverlaySide.LEFT);
+
+			desc = "If this option is enabled, then show the structures that have been searched in the past.";
+			showHaveFound = builder.comment(desc).define("showHaveFound", true);
+
+			desc = "If true, a new Xaero's Map way point will be add when you have search successfully";
+			newWayPoint = builder.comment(desc).define("newWayPoint", true);
 
 			builder.pop();
 		}

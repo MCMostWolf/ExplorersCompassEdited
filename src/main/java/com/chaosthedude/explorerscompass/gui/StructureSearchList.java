@@ -59,6 +59,7 @@ public class StructureSearchList extends ExtendedList<StructureSearchEntry> {
 				if (/*renderSelection*/ true && isSelectedItem(j)) {
 					final int insideLeft = x0 + width / 2 - getRowWidth() / 2 + 2;
 					RenderUtils.drawRect(insideLeft - 4, k - 4, insideLeft + getRowWidth() + 4, k + itemHeight, 255 / 2 << 24);
+					drawBorder(insideLeft - 4, k - 4, getRowWidth() + 8, itemHeight + 4);
 				}
 
 				int j2 = getRowLeft();
@@ -92,6 +93,17 @@ public class StructureSearchList extends ExtendedList<StructureSearchEntry> {
 
 	public ExplorersCompassScreen getParentScreen() {
 		return parentScreen;
+	}
+
+	private void drawBorder(int x, int y, int width, int height) {
+		// 上边框
+		RenderUtils.drawRect(x, y, x + width, y + 1, 0xDDDDDDDD);
+		// 下边框
+		RenderUtils.drawRect(x, y + height - 1, x + width, y + height, 0xDDDDDDDD);
+		// 左边框
+		RenderUtils.drawRect(x, y, x + 1, y + height, 0xDDDDDDDD);
+		// 右边框
+		RenderUtils.drawRect(x + width - 1, y, x + width, y + height, 0xDDDDDDDD);
 	}
 
 }

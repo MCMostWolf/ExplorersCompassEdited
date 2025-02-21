@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.chaosthedude.explorerscompass.config.BetterUI;
+import com.chaosthedude.explorerscompass.network.CleanCachePacket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -74,6 +76,8 @@ public class ExplorersCompass {
 		// Client packet
 		network.registerMessage(2, SyncPacket.class, SyncPacket::toBytes, SyncPacket::new, SyncPacket::handle);
 
+		network.registerMessage(3, CleanCachePacket.class, CleanCachePacket::toBytes, CleanCachePacket::new, CleanCachePacket::handle);
+
 		allowedStructures = new ArrayList<Structure<?>>();
 		dimensionsForAllowedStructures = new HashMap<Structure<?>, List<ResourceLocation>>();
 	}
@@ -81,7 +85,9 @@ public class ExplorersCompass {
 	@OnlyIn(Dist.CLIENT)
 	public void clientInit(FMLClientSetupEvent event) {
 		MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
-		
+
+		BetterUI.loadConfig(MODID);
+
 		ItemModelsProperties.registerProperty(explorersCompass, new ResourceLocation("angle"), new IItemPropertyGetter() {
 			@OnlyIn(Dist.CLIENT)
 			private double rotation;

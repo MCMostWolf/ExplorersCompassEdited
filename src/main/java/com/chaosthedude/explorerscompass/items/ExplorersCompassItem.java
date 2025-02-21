@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
+import com.chaosthedude.explorerscompass.config.BetterUI;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.chaosthedude.explorerscompass.gui.GuiWrapper;
 import com.chaosthedude.explorerscompass.network.SyncPacket;
@@ -54,7 +55,7 @@ public class ExplorersCompassItem extends Item {
 			setState(player.getHeldItem(hand), null, CompassState.INACTIVE, player);
 		}
 
-		return new ActionResult<ItemStack>(ActionResultType.PASS, player.getHeldItem(hand));
+		return new ActionResult<>(ActionResultType.PASS, player.getHeldItem(hand));
 	}
 	
 	@Override
@@ -72,15 +73,6 @@ public class ExplorersCompassItem extends Item {
 			StructureUtils.searchForStructure((ServerWorld) world, player, stack, StructureUtils.getStructureForKey(structureKey), pos);
 		}
 	}
-
-	public boolean isActive(ItemStack stack) {
-		if (ItemUtils.verifyNBT(stack)) {
-			return getState(stack) != CompassState.INACTIVE;
-		}
-
-		return false;
-	}
-
 	public void setSearching(ItemStack stack, ResourceLocation structureKey, PlayerEntity player) {
 		if (ItemUtils.verifyNBT(stack)) {
 			stack.getTag().putString("StructureKey", structureKey.toString());
@@ -90,6 +82,14 @@ public class ExplorersCompassItem extends Item {
 
 	public void setFound(ItemStack stack, int x, int z, int samples, PlayerEntity player) {
 		if (ItemUtils.verifyNBT(stack)) {
+
+			List<Map.Entry<String, Integer>> entries = BetterUI.getEntries();
+			for (Map.Entry<String, Integer> entry : entries) {
+                if (stack.getTag() != null && stack.getTag().getString("StructureKey").equals(entry.getKey())) {
+                    stack.getTag().putInt("CustomModelData", entry.getValue());
+                }
+            }
+
 			stack.getTag().putInt("State", CompassState.FOUND.getID());
 			stack.getTag().putInt("FoundX", x);
 			stack.getTag().putInt("FoundZ", z);
@@ -104,46 +104,15 @@ public class ExplorersCompassItem extends Item {
 			stack.getTag().putInt("Samples", samples);
 		}
 	}
-
-	public void setInactive(ItemStack stack, PlayerEntity player) {
-		if (ItemUtils.verifyNBT(stack)) {
-			stack.getTag().putInt("State", CompassState.INACTIVE.getID());
-		}
-	}
-
 	public void setState(ItemStack stack, BlockPos pos, CompassState state, PlayerEntity player) {
 		if (ItemUtils.verifyNBT(stack)) {
 			stack.getTag().putInt("State", state.getID());
 		}
 	}
 
-	public void setFoundStructureX(ItemStack stack, int x, PlayerEntity player) {
-		if (ItemUtils.verifyNBT(stack)) {
-			stack.getTag().putInt("FoundX", x);
-		}
-	}
-
-	public void setFoundStructureZ(ItemStack stack, int z, PlayerEntity player) {
-		if (ItemUtils.verifyNBT(stack)) {
-			stack.getTag().putInt("FoundZ", z);
-		}
-	}
-
-	public void setStructureKey(ItemStack stack, ResourceLocation structureKey, PlayerEntity player) {
-		if (ItemUtils.verifyNBT(stack)) {
-			stack.getTag().putString("StructureKey", structureKey.toString());
-		}
-	}
-
 	public void setSearchRadius(ItemStack stack, int searchRadius, PlayerEntity player) {
 		if (ItemUtils.verifyNBT(stack)) {
 			stack.getTag().putInt("SearchRadius", searchRadius);
-		}
-	}
-
-	public void setSamples(ItemStack stack, int samples, PlayerEntity player) {
-		if (ItemUtils.verifyNBT(stack)) {
-			stack.getTag().putInt("Samples", samples);
 		}
 	}
 	
@@ -200,16 +169,10 @@ public class ExplorersCompassItem extends Item {
 
 		return -1;
 	}
-
-	public int getDistanceToBiome(PlayerEntity player, ItemStack stack) {
-		return StructureUtils.getDistanceToStructure(player, getFoundStructureX(stack), getFoundStructureZ(stack));
-	}
-	
 	public boolean shouldDisplayCoordinates(ItemStack stack) {
 		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("DisplayCoordinates")) {
 			return stack.getTag().getBoolean("DisplayCoordinates");
 		}
-
 		return true;
 	}
 

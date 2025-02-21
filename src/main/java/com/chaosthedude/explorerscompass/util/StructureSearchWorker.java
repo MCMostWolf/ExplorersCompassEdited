@@ -22,9 +22,10 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.WorldWorkerManager;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Map;
+import java.util.UUID;
 
-import static com.chaosthedude.explorerscompass.util.StructureUtils.foundStructures;
+import static com.chaosthedude.explorerscompass.util.StructureUtils.haveFound;
+
 
 public class StructureSearchWorker implements WorldWorkerManager.IWorker {
 
@@ -114,19 +115,30 @@ public class StructureSearchWorker implements WorldWorkerManager.IWorker {
             if (structureStart != null) {
                 nowz = structureStart.getPos().getZ();
             }
-			Pair<Integer, Integer> nowpair = Pair.of(nowx, nowz);
-			if (foundStructures.get(nowpair)==null) {
-				if (!((player.getPosition().getX() <= nowx + 32 && player.getPosition().getX() >= nowx - 32) && (player.getPosition().getZ() <= nowz + 32 && player.getPosition().getZ() >= nowz - 32))) {
-					if (structureStart != null && structureStart.isValid()) {
-						x = structureStart.getPos().getX();
-						z = structureStart.getPos().getZ();
-						Pair<Integer, Integer> pair = Pair.of(x, z);
-						foundStructures.put(pair, true);
-						finish(true);
-						return true;
+
+					if (!((player.getPosition().getX() <= nowx + 32 && player.getPosition().getX() >= nowx - 32) && (player.getPosition().getZ() <= nowz + 32 && player.getPosition().getZ() >= nowz - 32))) {
+							if (!haveFound.isEmpty() && structureStart != null && structureStart.isValid()) {
+								int flag = 0;
+								for (Pair<UUID, Pair<Integer, Integer>> pair : haveFound) {
+									if (pair.equals(Pair.of(PlayerEntity.getUUID(player.getGameProfile()), Pair.of(nowx, nowz)))) {
+									    flag ++;
+									}
+								}
+								if (flag == 0) {
+									x = structureStart.getPos().getX();
+									z = structureStart.getPos().getZ();
+									finish(true);
+									return true;
+								}
+							}
+							else if (structureStart != null && structureStart.isValid()) {
+								x = structureStart.getPos().getX();
+								z = structureStart.getPos().getZ();
+								finish(true);
+								return true;
+							}
 					}
-				}
-			}
+
 
 
 			samples++;
@@ -153,18 +165,23 @@ public class StructureSearchWorker implements WorldWorkerManager.IWorker {
 			return true;
 		}
 		finish(false);
-		foundStructures.clear();
 		return false;
 	}
 
 	private void finish(boolean found) {
 		if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
 			if (found) {
+				haveFound.add(Pair.of(PlayerEntity.getUUID(player.getGameProfile()), Pair.of(x, z)));
 				ExplorersCompass.LOGGER.info("Search succeeded: " + getRadius() + " radius, " + samples + " samples");
 				((ExplorersCompassItem) stack.getItem()).setFound(stack, x, z, samples, player);
 				((ExplorersCompassItem) stack.getItem()).setDisplayCoordinates(stack, ConfigHandler.GENERAL.displayCoordinates.get());
 			} else {
+
+				if (ConfigHandler.GENERAL.cleanCache.get()) {
+					haveFound.removeIf(pair -> pair.getFirst().equals(player.getUniqueID()));
+				}
 				ExplorersCompass.LOGGER.info("Search failed: " + getRadius() + " radius, " + samples + " samples");
+
 				((ExplorersCompassItem) stack.getItem()).setNotFound(stack, player, roundRadius(getRadius(), 250), samples);
 			}
 		} else {
