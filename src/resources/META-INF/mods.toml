@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[40,)"
+license="CC BY-NC-SA 4.0"
+issueTrackerURL="https://github.com/MattCzyr/ExplorersCompass/issues"
+[[mods]]
+    modId="explorerscompass"
+    version="${file.jarVersion}"
+    displayName="Explorer's Compass"
+    displayURL="https://github.com/MattCzyr/ExplorersCompass"
+    authors="ChaosTheDude"
+    description='''
+    Search for and locate structures anywhere in the world.
+    '''
+
+[[dependencies.explorerscompass]]
+    modId="forge"
+    mandatory=true
+    versionRange="[40,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.explorerscompass]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.18.2,)"
+    ordering="NONE"
+    side="BOTH"
