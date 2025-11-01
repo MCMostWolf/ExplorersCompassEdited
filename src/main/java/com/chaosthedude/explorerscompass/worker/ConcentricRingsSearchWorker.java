@@ -1,14 +1,12 @@
 package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
 import com.mojang.datafixers.util.Pair;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +17,7 @@ import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStr
 
 public class ConcentricRingsSearchWorker extends StructureSearchWorker<ConcentricRingsStructurePlacement> {
 
-	private List<ChunkPos> potentialChunks;
+	private final List<ChunkPos> potentialChunks;
 	private int chunkIndex;
 	private double minDistance;
 	private Pair<BlockPos, Structure> closest;
@@ -81,32 +79,6 @@ public class ConcentricRingsSearchWorker extends StructureSearchWorker<Concentri
 	@Override
 	public boolean shouldLogRadius() {
 		return false;
-	}
-
-	// Non-optimized method to get the closest structure, for testing purposes
-	private Pair<BlockPos, Structure> getClosest() {
-		List<ChunkPos> list = level.getChunkSource().getGeneratorState().getRingPositionsFor(placement);
-		if (list == null) {
-			return null;
-		} else {
-			Pair<BlockPos, Structure> closestPair = null;
-
-			double minDistance = Double.MAX_VALUE;
-			MutableBlockPos sampleBlockPos = new MutableBlockPos();
-			for (ChunkPos chunkPos : list) {
-				sampleBlockPos.set(SectionPos.sectionToBlockCoord(chunkPos.x, 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z, 8));
-				double distance = sampleBlockPos.distSqr(startPos);
-				if (closestPair == null || distance < minDistance) {
-					Pair<BlockPos, Structure> pair = getStructureGeneratingAt(chunkPos);
-					if (pair != null) {
-						closestPair = pair;
-						minDistance = distance;
-					}
-				}
-			}
-
-			return closestPair;
-		}
 	}
 
 }

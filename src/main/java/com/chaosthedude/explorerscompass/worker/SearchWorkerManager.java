@@ -1,10 +1,6 @@
 package com.chaosthedude.explorerscompass.worker;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.level.ChunkPos;
@@ -27,11 +23,11 @@ public class SearchWorkerManager {
 	
 	private final String id = RandomStringUtils.random(8, "0123456789abcdef");
 	
-	private List<StructureSearchWorker<?>> workers;
+	private final List<StructureSearchWorker<?>> workers;
 	public static List<Pair<UUID, ChunkPos>> foundChunks;
 
 	public SearchWorkerManager() {
-		workers = new ArrayList<StructureSearchWorker<?>>();
+		workers = new ArrayList<>();
 		foundChunks = new ArrayList<>(); // 初始化foundChunks
 	}
 	
@@ -41,10 +37,8 @@ public class SearchWorkerManager {
 		Map<StructurePlacement, List<Structure>> placementToStructuresMap = new Object2ObjectArrayMap<>();
 		
 		for (Structure structure : structures) {
-			for (StructurePlacement structureplacement : level.getChunkSource().getGeneratorState().getPlacementsForStructure(StructureUtils.getHolderForStructure(level, structure))) {
-				placementToStructuresMap.computeIfAbsent(structureplacement, (holderSet) -> {
-					return new ObjectArrayList<Structure>();
-				}).add(structure);
+			for (StructurePlacement structureplacement : level.getChunkSource().getGeneratorState().getPlacementsForStructure(Objects.requireNonNull(StructureUtils.getHolderForStructure(level, structure)))) {
+				placementToStructuresMap.computeIfAbsent(structureplacement, (holderSet) -> new ObjectArrayList<>()).add(structure);
 			}
 		}
 

@@ -1,5 +1,6 @@
 package com.chaosthedude.explorerscompass.network;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
@@ -23,34 +24,29 @@ public class TeleportPacket {
 
 	public TeleportPacket(FriendlyByteBuf buf) {}
 
-	public void fromBytes(FriendlyByteBuf buf) {}
-
 	public void toBytes(FriendlyByteBuf buf) {}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
-			final ItemStack stack = ItemUtils.getHeldItem(ctx.get().getSender(), ExplorersCompass.explorersCompass);
+			final ItemStack stack = ItemUtils.getHeldItem(Objects.requireNonNull(ctx.get().getSender()), ExplorersCompass.explorersCompass);
 			if (!stack.isEmpty()) {
 				final ExplorersCompassItem explorersCompass = (ExplorersCompassItem) stack.getItem();
 				final ServerPlayer player = ctx.get().getSender();
-				if (ConfigHandler.GENERAL.allowTeleport.get() && PlayerUtils.canTeleport(player.getServer(), player)) {
-					if (explorersCompass.getState(stack) == CompassState.FOUND) {
-						final int x = explorersCompass.getFoundStructureX(stack);
-						final int z = explorersCompass.getFoundStructureZ(stack);
-						final int y = findValidTeleportHeight(player.level(), x, z);
+                if (player != null && ConfigHandler.GENERAL.allowTeleport.get() && PlayerUtils.canTeleport(player.getServer(), player)) {
+                    if (explorersCompass.getState(stack) == CompassState.FOUND) {
+                        final int x = explorersCompass.getFoundStructureX(stack);
+                        final int z = explorersCompass.getFoundStructureZ(stack);
+                        final int y = findValidTeleportHeight(player.level(), x, z);
 
-						player.stopRiding();
-						player.connection.teleport(x, y, z, player.getYRot(), player.getXRot());
-
-						if (!player.isFallFlying()) {
-							player.setDeltaMovement(player.getDeltaMovement().x(), 0, player.getDeltaMovement().z());
-							player.setOnGround(true);
-						}
-					}
-				} else {
-					ExplorersCompass.LOGGER.warn("Player " + player.getDisplayName().getString() + " tried to teleport but does not have permission.");
-				}
-			}
+                        player.stopRiding();
+                        player.teleportTo(x, y, z);
+                        if (!player.isFallFlying()) {
+                            player.setDeltaMovement(player.getDeltaMovement().x(), 0, player.getDeltaMovement().z());
+                            player.setOnGround(true);
+                        }
+                    }
+                }
+            }
 		});
 		ctx.get().setPacketHandled(true);
 	}

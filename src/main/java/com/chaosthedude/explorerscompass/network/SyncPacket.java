@@ -16,13 +16,11 @@ import net.minecraftforge.network.NetworkEvent;
 
 public class SyncPacket {
 
-	private boolean canTeleport;
-	private List<ResourceLocation> allowedStructureKeys;
-	private ListMultimap<ResourceLocation, ResourceLocation> dimensionKeysForAllowedStructureKeys;
-	private Map<ResourceLocation, ResourceLocation> structureKeysToTypeKeys;
-	private ListMultimap<ResourceLocation, ResourceLocation> typeKeysToStructureKeys;
-
-	public SyncPacket() {}
+	private final boolean canTeleport;
+	private final List<ResourceLocation> allowedStructureKeys;
+	private final ListMultimap<ResourceLocation, ResourceLocation> dimensionKeysForAllowedStructureKeys;
+	private final Map<ResourceLocation, ResourceLocation> structureKeysToTypeKeys;
+	private final ListMultimap<ResourceLocation, ResourceLocation> typeKeysToStructureKeys;
 
 	public SyncPacket(boolean canTeleport, List<ResourceLocation> allowedStructures, ListMultimap<ResourceLocation, ResourceLocation> dimensionsForAllowedStructures, Map<ResourceLocation, ResourceLocation> structureKeysToTypeKeys, ListMultimap<ResourceLocation, ResourceLocation> typeKeysToStructureKeys) {
 		this.canTeleport = canTeleport;
@@ -34,26 +32,24 @@ public class SyncPacket {
 
 	public SyncPacket(FriendlyByteBuf buf) {
 		canTeleport = buf.readBoolean();
-		allowedStructureKeys = new ArrayList<ResourceLocation>();
+		allowedStructureKeys = new ArrayList<>();
 		dimensionKeysForAllowedStructureKeys = ArrayListMultimap.create();
-		structureKeysToTypeKeys = new HashMap<ResourceLocation, ResourceLocation>();
+		structureKeysToTypeKeys = new HashMap<>();
 		typeKeysToStructureKeys = ArrayListMultimap.create();
 		
 		int numStructures = buf.readInt();
 		for (int i = 0; i < numStructures; i++) {
 			ResourceLocation structureKey = buf.readResourceLocation();
 			int numDimensions = buf.readInt();
-			List<ResourceLocation> dimensions = new ArrayList<ResourceLocation>();
+			List<ResourceLocation> dimensions = new ArrayList<>();
 			for (int j = 0; j < numDimensions; j++) {
 				dimensions.add(buf.readResourceLocation());
 			}
 			ResourceLocation typeKey = buf.readResourceLocation();
-			if (structureKey != null) {
-				allowedStructureKeys.add(structureKey);
-				dimensionKeysForAllowedStructureKeys.putAll(structureKey, dimensions);
-				structureKeysToTypeKeys.put(structureKey, typeKey);
-			}
-		}
+            allowedStructureKeys.add(structureKey);
+            dimensionKeysForAllowedStructureKeys.putAll(structureKey, dimensions);
+            structureKeysToTypeKeys.put(structureKey, typeKey);
+        }
 		
 		int numTypes = buf.readInt();
 		for (int i = 0; i < numTypes; i++) {

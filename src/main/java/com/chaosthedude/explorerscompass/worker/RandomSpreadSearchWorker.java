@@ -2,7 +2,6 @@ package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.datafixers.util.Pair;
 
@@ -17,10 +16,10 @@ import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStruct
 
 public class RandomSpreadSearchWorker extends StructureSearchWorker<RandomSpreadStructurePlacement> {
 
-	private int spacing;
+	private final int spacing;
 	private int length;
-	private int startSectionPosX;
-	private int startSectionPosZ;
+	private final int startSectionPosX;
+	private final int startSectionPosZ;
 	private int x;
 	private int z;
 
@@ -62,15 +61,14 @@ public class RandomSpreadSearchWorker extends StructureSearchWorker<RandomSpread
 					succeed(pair.getFirst(), pair.getSecond());
 				}
 			}
-
 			z++;
 			if (z > length) {
-				z = -length;
 				x++;
 				if (x > length) {
-					x = -length;
 					length++;
+					x -= length;
 				}
+				z = -length;
 			}
 		} else {
 			if (!finished) {
@@ -97,27 +95,6 @@ public class RandomSpreadSearchWorker extends StructureSearchWorker<RandomSpread
 	@Override
 	public boolean shouldLogRadius() {
 		return true;
-	}
-
-	// Non-optimized method to get the closest structure, for testing purposes
-	private Pair<BlockPos, Structure> getClosest() {
-		for (int x = -length; x <= length; ++x) {
-			boolean shouldSampleX = x == -length || x == length;
-			for (int z = -length; z <= length; ++z) {
-				boolean shouldSampleZ = z == -length || z == length;
-				if (shouldSampleX || shouldSampleZ) {
-					int sampleX = startSectionPosX + (spacing * x);
-					int sampleZ = startSectionPosZ + (spacing * z);
-					ChunkPos chunkPos = placement.getPotentialStructureChunk(level.getSeed(), sampleX, sampleZ);
-					Pair<BlockPos, Structure> pair = getStructureGeneratingAt(chunkPos);
-					if (pair != null) {
-						return pair;
-					}
-				}
-			}
-		}
-
-		return null;
 	}
 
 }

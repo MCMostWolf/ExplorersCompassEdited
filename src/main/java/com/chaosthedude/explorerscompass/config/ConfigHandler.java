@@ -24,6 +24,9 @@ public class ConfigHandler {
 		public final ForgeConfigSpec.IntValue maxRadius;
 		public final ForgeConfigSpec.ConfigValue<List<String>> structureBlacklist;
 		public final ForgeConfigSpec.IntValue maxSamples;
+		public final ForgeConfigSpec.BooleanValue cleanCache;
+		public final ForgeConfigSpec.BooleanValue couldFoundAlexCaves;
+		public final ForgeConfigSpec.BooleanValue customResource;
 
 		General(ForgeConfigSpec.Builder builder) {
 			String desc;
@@ -44,6 +47,15 @@ public class ConfigHandler {
 			desc = "The maximum number of samples to be taken when searching for a structure.";
 			maxSamples = builder.comment(desc).defineInRange("maxSamples", 100000, 0, 100000000);
 
+			desc = "If this option is enabled, then the compass will clear the cache of previously found structures when the structure couldn't found.";
+			cleanCache = builder.comment(desc).define("cleanCache", false);
+
+			desc = "If this option is enabled, then the compass will search alex cave";
+			couldFoundAlexCaves = builder.comment(desc).define("couldFoundAlexCaves", true);
+
+			desc = "Load config.json";
+			customResource = builder.comment(desc).define("customResource", false);
+
 			builder.pop();
 		}
 	}
@@ -53,7 +65,8 @@ public class ConfigHandler {
 		public final ForgeConfigSpec.BooleanValue translateStructureNames;
 		public final ForgeConfigSpec.EnumValue<OverlaySide> overlaySide;
 		public final ForgeConfigSpec.IntValue overlayLineOffset;
-		public final ForgeConfigSpec.BooleanValue haveFoundStructure;
+		public final ForgeConfigSpec.BooleanValue showHaveFound;
+		public final ForgeConfigSpec.BooleanValue newWayPoint;
 
 		Client(ForgeConfigSpec.Builder builder) {
 			String desc;
@@ -72,7 +85,11 @@ public class ConfigHandler {
 			overlaySide = builder.comment(desc).defineEnum("overlaySide", OverlaySide.LEFT);
 
 			desc = "If this option is enabled, then show the structures that have been searched in the past.";
-			haveFoundStructure = builder.comment(desc).define("haveFoundStructure", true);
+			showHaveFound = builder.comment(desc).define("showHaveFound", true);
+
+			desc = "If true, a new Xaero's Map way point will be add when you have search successfully";
+			newWayPoint = builder.comment(desc).define("newWayPoint", true);
+
 			builder.pop();
 		}
 	}

@@ -5,14 +5,18 @@ import java.util.UUID;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.config.ConfigHandler;
+import com.chaosthedude.explorerscompass.connect.NewWayPoint;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
+import com.chaosthedude.explorerscompass.network.NewWayPointPacket;
 import com.chaosthedude.explorerscompass.util.StructureUtils;
 import com.mojang.datafixers.util.Pair;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CompassItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -22,6 +26,8 @@ import net.minecraft.world.level.levelgen.structure.StructureCheckResult;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraftforge.common.WorldWorkerManager;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.network.NetworkDirection;
 
 public abstract class StructureSearchWorker<T extends StructurePlacement> implements WorldWorkerManager.IWorker {
 
@@ -57,7 +63,7 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	public void start() {
 		if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
 			if (ConfigHandler.GENERAL.maxRadius.get() > 0) {
-				ExplorersCompass.LOGGER.info("SearchWorkerManager " + managerId + ": " + getName() + " starting with " + (shouldLogRadius() ? ConfigHandler.GENERAL.maxRadius.get() + " max radius, " : "") + ConfigHandler.GENERAL.maxSamples.get() + " max samples");
+                ExplorersCompass.LOGGER.info("SearchWorkerManager {}: {} starting with {}{} max samples", managerId, getName(), shouldLogRadius() ? ConfigHandler.GENERAL.maxRadius.get() + " max radius, " : "", ConfigHandler.GENERAL.maxSamples.get());
 				WorldWorkerManager.addWorker(this);
 			} else {
 				fail();
@@ -75,7 +81,7 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		int radius = getRadius();
 		if (radius > 250 && radius / 250 > lastRadiusThreshold) {
 			if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
-				((ExplorersCompassItem) stack.getItem()).setSearchRadius(stack, roundRadius(radius, 250), player);
+				((ExplorersCompassItem) stack.getItem()).setSearchRadius(stack, roundRadius(radius), player);
 			}
 			lastRadiusThreshold = radius / 250;
 		}
@@ -83,23 +89,6 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	}
 
 	protected Pair<BlockPos, Structure> getStructureGeneratingAt(ChunkPos chunkPos) {
-		// 计算玩家周围的4x4区块范围
-		BlockPos playerPos = player.blockPosition();
-		ChunkPos playerChunkPos = new ChunkPos(playerPos);
-		int playerChunkX = playerChunkPos.x;
-		int playerChunkZ = playerChunkPos.z;
-
-		// 确定4x4区块的范围
-		int minX = playerChunkX - 2;
-		int maxX = playerChunkX + 2;
-		int minZ = playerChunkZ - 2;
-		int maxZ = playerChunkZ + 2;
-
-		// 检查当前区块是否在4x4范围内
-		if (chunkPos.x >= minX && chunkPos.x <= maxX && chunkPos.z >= minZ && chunkPos.z <= maxZ) {
-			return null;
-		}
-
 		// 检查当前区块是否已经在foundChunks中
 		if (foundChunks.contains(Pair.of(player.getUUID(), chunkPos))) {
 			return null;
@@ -124,11 +113,16 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	}
 
 	protected void succeed(BlockPos pos, Structure structure) {
-		ExplorersCompass.LOGGER.info("SearchWorkerManager " + managerId + ": " + getName() + " succeeded with " + (shouldLogRadius() ? getRadius() + " radius, " : "") + samples + " samples");
-		if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
-			((ExplorersCompassItem) stack.getItem()).succeed(stack, StructureUtils.getKeyForStructure(level, structure), pos.getX(), pos.getZ(), samples, ConfigHandler.GENERAL.displayCoordinates.get());
+        ExplorersCompass.LOGGER.info("SearchWorkerManager {}: {} succeeded with {}{} samples", managerId, getName(), shouldLogRadius() ? getRadius() + " radius, " : "", samples);
+		if (!stack.isEmpty() && stack.getItem() instanceof ExplorersCompassItem compass) {
+			compass.succeed(stack, StructureUtils.getKeyForStructure(level, structure), pos.getX(), pos.getZ(), samples, ConfigHandler.GENERAL.displayCoordinates.get());
+			if (ModList.get().isLoaded("xaerominimap")) {
+				if (player instanceof ServerPlayer serverPlayer) {
+					ExplorersCompass.network.sendTo(new NewWayPointPacket(pos.getX(), pos.getZ()), serverPlayer.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+				}
+			}
 		} else {
-			ExplorersCompass.LOGGER.error("SearchWorkerManager " + managerId + ": " + getName() + " found invalid compass after successful search");
+            ExplorersCompass.LOGGER.error("SearchWorkerManager {}: {} found invalid compass after successful search", managerId, getName());
 		}
 		ChunkPos chunkPos = new ChunkPos(pos);
         foundChunks.add(Pair.of(player.getUUID(), chunkPos));
@@ -136,18 +130,21 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 	}
 
 	protected void fail() {
-		ExplorersCompass.LOGGER.info("SearchWorkerManager " + managerId + ": " + getName() + " failed with " + (shouldLogRadius() ? getRadius() + " radius, " : "") + samples + " samples");
+        ExplorersCompass.LOGGER.info("SearchWorkerManager {}: {} failed with {}{} samples", managerId, getName(), shouldLogRadius() ? getRadius() + " radius, " : "", samples);
 		if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
-			((ExplorersCompassItem) stack.getItem()).fail(stack, roundRadius(getRadius(), 250), samples);
+			((ExplorersCompassItem) stack.getItem()).fail(stack, roundRadius(getRadius()), samples);
 		} else {
-			ExplorersCompass.LOGGER.error("SearchWorkerManager " + managerId + ": " + getName() + " found invalid compass after failed search");
+            ExplorersCompass.LOGGER.error("SearchWorkerManager {}: {} found invalid compass after failed search", managerId, getName());
 		}
-		foundChunks.clear();
+		if (ConfigHandler.GENERAL.cleanCache.get()) {
+			foundChunks.removeIf(pair -> pair.getFirst().equals(player.getUUID()));
+		}
+
 		finished = true;
 	}
 
 	public void stop() {
-		ExplorersCompass.LOGGER.info("SearchWorkerManager " + managerId + ": " + getName() + " stopped with " + (shouldLogRadius() ? getRadius() + " radius, " : "") + samples + " samples");
+        ExplorersCompass.LOGGER.info("SearchWorkerManager {}: {} stopped with {}{} samples", managerId, getName(), shouldLogRadius() ? getRadius() + " radius, " : "", samples);
 		finished = true;
 	}
 
@@ -155,8 +152,8 @@ public abstract class StructureSearchWorker<T extends StructurePlacement> implem
 		return StructureUtils.getHorizontalDistanceToLocation(startPos, currentPos.getX(), currentPos.getZ());
 	}
 
-	protected int roundRadius(int radius, int roundTo) {
-		return ((int) radius / roundTo) * roundTo;
+	protected int roundRadius(int radius) {
+		return (radius / 250) * 250;
 	}
 
 	protected abstract String getName();

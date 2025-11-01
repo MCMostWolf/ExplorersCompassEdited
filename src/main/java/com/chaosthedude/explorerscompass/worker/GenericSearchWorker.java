@@ -2,7 +2,6 @@ package com.chaosthedude.explorerscompass.worker;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.chaosthedude.explorerscompass.ExplorersCompass;
 import com.chaosthedude.explorerscompass.items.ExplorersCompassItem;
@@ -71,7 +70,7 @@ public class GenericSearchWorker extends StructureSearchWorker<StructurePlacemen
 			int radius = getRadius();
 			if (radius > 250 && radius / 250 > lastRadiusThreshold) {
 				if (!stack.isEmpty() && stack.getItem() == ExplorersCompass.explorersCompass) {
-					((ExplorersCompassItem) stack.getItem()).setSearchRadius(stack, roundRadius(radius, 250), player);
+					((ExplorersCompassItem) stack.getItem()).setSearchRadius(stack, roundRadius(radius), player);
 				}
 				lastRadiusThreshold = radius / 250;
 			}

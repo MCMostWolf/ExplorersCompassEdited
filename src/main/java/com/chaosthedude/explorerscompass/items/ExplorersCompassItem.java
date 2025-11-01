@@ -16,6 +16,7 @@ import com.chaosthedude.explorerscompass.util.StructureUtils;
 import com.chaosthedude.explorerscompass.worker.SearchWorkerManager;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +28,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.NetworkDirection;
 
 public class ExplorersCompassItem extends Item {
@@ -46,6 +48,7 @@ public class ExplorersCompassItem extends Item {
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
 		if (!player.isCrouching()) {
 			if (level.isClientSide()) {
+
 				final ItemStack stack = ItemUtils.getHeldItem(player, ExplorersCompass.explorersCompass);
 				GuiWrapper.openGUI(level, player, stack);
 			} else {
@@ -59,7 +62,7 @@ public class ExplorersCompassItem extends Item {
 			workerManager.clear();
 			setState(player.getItemInHand(hand), null, CompassState.INACTIVE, player);
 		}
-		return new InteractionResultHolder<ItemStack>(InteractionResult.PASS, player.getItemInHand(hand));
+		return new InteractionResultHolder<>(InteractionResult.PASS, player.getItemInHand(hand));
 	}
 	
 	@Override
@@ -90,10 +93,12 @@ public class ExplorersCompassItem extends Item {
 	
 	public void succeed(ItemStack stack, ResourceLocation structureKey, int x, int z, int samples, boolean displayCoordinates) {
 		setFound(stack, structureKey, x, z, samples);
-		List<Map.Entry<String, Integer>> entries = BetterUI.getEntries();
-		for (Map.Entry<String, Integer> entry : entries) {
-			if (structureKey.toString().equals(entry.getKey())) {
-				stack.getTag().putInt("CustomModelData", entry.getValue());
+		if (ConfigHandler.GENERAL.customResource.get()) {
+			List<Map.Entry<String, Integer>> entries = BetterUI.getEntries();
+			for (Map.Entry<String, Integer> entry : entries) {
+				if (structureKey.toString().equals(entry.getKey())) {
+					stack.getTag().putInt("CustomModelData", entry.getValue());
+				}
 			}
 		}
 		setDisplayCoordinates(stack, displayCoordinates);
@@ -130,6 +135,7 @@ public class ExplorersCompassItem extends Item {
 			stack.getTag().putInt("FoundX", x);
 			stack.getTag().putInt("FoundZ", z);
 			stack.getTag().putInt("Samples", samples);
+			setHaveSearched(stack, structureKey, true, x, z);
 		}
 	}
 
@@ -138,6 +144,7 @@ public class ExplorersCompassItem extends Item {
 			stack.getTag().putInt("State", CompassState.NOT_FOUND.getID());
 			stack.getTag().putInt("SearchRadius", searchRadius);
 			stack.getTag().putInt("Samples", samples);
+			setHaveSearched(stack, this.getStructureKey(stack), false, 0, 0);
 		}
 	}
 
@@ -205,6 +212,20 @@ public class ExplorersCompassItem extends Item {
 		return 0;
 	}
 
+	public int getFoundStructureX1(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getInt("FoundX1");
+		}
+		return 0;
+	}
+
+	public int getFoundStructureX2(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getInt("FoundX2");
+		}
+		return 0;
+	}
+
 	public int getFoundStructureZ(ItemStack stack) {
 		if (ItemUtils.verifyNBT(stack)) {
 			return stack.getTag().getInt("FoundZ");
@@ -213,9 +234,38 @@ public class ExplorersCompassItem extends Item {
 		return 0;
 	}
 
+	public int getFoundStructureZ1(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getInt("FoundZ1");
+		}
+		return 0;
+	}
+
+	public int getFoundStructureZ2(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getInt("FoundZ2");
+		}
+		return 0;
+	}
+
 	public ResourceLocation getStructureKey(ItemStack stack) {
 		if (ItemUtils.verifyNBT(stack)) {
 			return new ResourceLocation(stack.getTag().getString("StructureKey"));
+		}
+
+		return new ResourceLocation("");
+	}
+	public ResourceLocation getStructureKey1(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return new ResourceLocation(stack.getTag().getCompound("HaveSearched").getString("StructureKey1"));
+		}
+
+		return new ResourceLocation("");
+	}
+
+	public ResourceLocation getStructureKey2(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return new ResourceLocation(stack.getTag().getCompound("HaveSearched").getString("StructureKey2"));
 		}
 
 		return new ResourceLocation("");
@@ -248,5 +298,76 @@ public class ExplorersCompassItem extends Item {
 
 		return true;
 	}
+	public int getOrInitHaveFoundTimes(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getInt("HaveFoundTimes");
+		}
+		else {
+			return 0;
+		}
+	}
+	public boolean getSearchResult1(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getBoolean("SearchState1");
+		}
+		else {
+			return false;
+		}
+	}
+	public boolean getSearchResult2(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getBoolean("SearchState2");
+		}
+		else {
+			return false;
+		}
+	}
 
+	public int getSearchedTimes(ItemStack stack) {
+		if (ItemUtils.verifyNBT(stack) && stack.getTag().contains("HaveSearched")) {
+			return stack.getTag().getCompound("HaveSearched").getInt("SearchedTimes");
+		}
+		else {
+			return 0;
+		}
+	}
+
+	public void setHaveSearched(ItemStack stack, ResourceLocation structureKey, boolean isFound, int x, int z) {
+		if (ItemUtils.verifyNBT(stack)) {
+			if (!stack.getTag().contains("HaveSearched")) {
+				CompoundTag tag = new CompoundTag();
+				tag.putString("StructureKey", structureKey.toString());
+				tag.putString("StructureKey1","");
+				tag.putString("StructureKey2", "");
+
+				tag.putBoolean("SearchState", isFound);
+				tag.putBoolean("SearchState1", false);
+				tag.putBoolean("SearchState2", false);
+				tag.putInt("FoundX", x);
+				tag.putInt("FoundX1", 0);
+				tag.putInt("FoundZ2", 0);
+				tag.putInt("FoundZ", z);
+				tag.putInt("FoundX1", 0);
+				tag.putInt("FoundZ2", 0);
+				tag.putInt("SearchedTimes", 0);
+				stack.getTag().put("HaveSearched", tag);
+			}
+			else {
+				CompoundTag tag = stack.getTag().getCompound("HaveSearched");
+				tag.putString("StructureKey2", tag.getString("StructureKey1"));
+				tag.putString("StructureKey1", tag.getString("StructureKey"));
+				tag.putString("StructureKey", structureKey.toString());
+				tag.putBoolean("SearchState2", tag.getBoolean("SearchState1"));
+				tag.putBoolean("SearchState1", tag.getBoolean("SearchState"));
+				tag.putBoolean("SearchState", isFound);
+				tag.putInt("FoundX2", tag.getInt("FoundX1"));
+				tag.putInt("FoundZ2", tag.getInt("FoundZ1"));
+				tag.putInt("FoundX1", tag.getInt("FoundX"));
+				tag.putInt("FoundZ1", tag.getInt("FoundZ"));
+				tag.putInt("FoundX", x);
+				tag.putInt("FoundZ", z);
+				tag.putInt("SearchedTimes", tag.getInt("SearchedTimes") + 1);
+			}
+		}
+	}
 }
